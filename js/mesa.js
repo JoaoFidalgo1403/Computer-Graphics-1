@@ -80,22 +80,23 @@ function createCrane(x, y, z) {
     //addTriangularPrism(crane, -11, 24.5 , 0, 20, 1, 1); //Da problemas
     addCraneBase(crane, 0, 1, 0);
     addCranePillar(crane, 0, 12, 0);
-    addCabin(crane, 0, 21, 2);
+    addCabin(crane, 0, 25, 2);
 
     addCylinder(crane, 0, 22.5, 0, 1, 1.5, 1.5);
-    addCylinder(crane, 0, 23.5, 0, 1, 1, 1);
+    createBox(crane, 0, 24.5, 0, 2, 3, 2);
+    //addCylinder(crane, 0, 23.5, 0, 1, 1, 1);
 
-    addJib(crane, 0, 25,  11);
-    addCounterJib(crane, 0, 24.5, -4);
-    addCounterWeigth(crane, 0,  23, -6.5);
-    addGuard(crane, -1, 25.5, -6);
-    addGuard(crane, 1, 25.5, -6);
+    addJib(crane, 0, 27,  11);
+    addCounterJib(crane, 0, 26.5, -4);
+    addCounterWeigth(crane, 0,  25, -6.5);
+    addGuard(crane, -1, 27.5, -6);
+    addGuard(crane, 1, 27.5, -6);
 
-    addCylinder(crane, 0, 16.5, 17, 14, 0.1, 0.1);
-    addHook(crane, 0, 8.5, 17);
+    addCylinder(crane, 0, 18.5, 17, 14, 0.1, 0.1);
+    addHook(crane, 0, 10.5, 17);
 
     //addCylinder(crane, 0, 27.5, 0, 5, 0.5, 1); //Brincadeira
-    addTower(crane, 0, 27.5, 0);
+    addTower(crane, 0, 29.5, 0);
 
     scene.add(crane);
     crane.position.set(x, y, z);

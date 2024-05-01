@@ -157,18 +157,22 @@ function createCamera() {
     camera3.position.set(0, 100, 0); 
     camera3.lookAt(0, 0, 0);
 
-    camera5 = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+    camera4 = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+    camera4.position.set(30, 30, 30);
+    camera4.lookAt(0, 0, 0);
+
+    camera5 = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 1000);
     camera5.position.set(30, 30, 30);
-    camera5.lookAt(0, 10, 0);
+    camera5.lookAt(0, 0, 0);
 
 
-    activeCamera = camera1; 
+    activeCamera = camera5; 
 
     cameras.push(camera1);
     cameras.push(camera2);
     cameras.push(camera3);
-    //cameras.push(camera4);
-    cameras.push(camera5)
+    cameras.push(camera4);
+    cameras.push(camera5);
 
 }
 
@@ -216,6 +220,7 @@ function init() {
 // Function to render the scene
 function render() {
     'use strict';
+    //renderer.setClearColor(0x80d1d1);   // Background color set to Cyan
     renderer.render(scene, activeCamera);
 }
 

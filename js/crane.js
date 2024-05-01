@@ -2,16 +2,40 @@ import * as THREE from 'three';
 // Define variables
 var activeCamera, camera1, camera2, camera3, camera4, camera5, scene, renderer;
 var geometry, material, mesh;
-var height = 25;
 var activeCameraIndex = 0; // Initialize activeCameraIndex
+var moveLeft = false;
+var moveRight = false;
+
+var kart;
 
 // Define cameras array
 var cameras = [];
 
+/*
+// Function to add triangular prism
+function addTriangularPrism(obj, x, y, z, height, radiusTop, radiusBottom) {
+    'use strict';
+    var sides = 3; // Number of sides for the cylinder (triangle has 3 sides)
+    var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, sides);
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2); // Rotate prism
+    obj.add(mesh);
+    return mesh;
+}
+*/
 function createBox(obj, x, y, z, width, height, length) {
     'use strict'
     geometry = new THREE.BoxGeometry(width, height, length);
     mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    obj.add(mesh);
+}
+
+function addCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
+    'use strict';
+    var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 8);
+    var mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
@@ -22,25 +46,6 @@ function addCraneBase(obj, x, y, z) {
 
 function addCranePillar(obj, x, y, z) {
     createBox(obj, x, y ,z, 2, 20, 2);    
-}
-
-// Function to add triangular prism
-function addTriangularPrism(obj, x, y, z, height, radiusTop, radiusBottom) {
-    'use strict';
-    var sides = 3; // Number of sides for the cylinder (triangle has 3 sides)
-    var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, sides);
-    var mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
-    mesh.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2); // Rotate prism
-    obj.add(mesh);
-}
-
-function addCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
-    'use strict';
-    var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 8);
-    var mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(x, y, z);
-    obj.add(mesh);
 }
 
 function addJib(obj, x, y, z) {
@@ -71,6 +76,22 @@ function addHook(obj, x, y, z) {
     createBox(obj, x, y, z, 1, 2, 1);
 }
 
+function addKart(obj, x, y, z) {
+    createBox(obj, x, y, z, 2, 1, 2);
+}
+
+function createKart(x, y, z) {
+    'use strict';
+    kart = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+    addKart(kart, 0, 0, 0);
+    addCylinder(kart, 0, -7.5, 0, 14, 0.1, 0.1); //0, 25.75, 17
+    addHook(kart, 0, -15.5, 0);
+
+    scene.add(kart);
+
+    kart.position.set(x, y, z);
+}
 
 // Function to create crane
 function createCrane(x, y, z) {
@@ -78,27 +99,30 @@ function createCrane(x, y, z) {
     var crane = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
     //addTriangularPrism(crane, -11, 24.5 , 0, 20, 1, 1); //Da problemas
+    //addCylinder(crane, 0, 23.5, 0, 1, 1, 1);
+    //addCylinder(crane, 0, 27.5, 0, 5, 0.5, 1); //Brincadeira
+
+    //Base
     addCraneBase(crane, 0, 1, 0);
     addCranePillar(crane, 0, 12, 0);
-    addCabin(crane, 0, 25, 2);
-
+    
+    //Elemento rotativo
     addCylinder(crane, 0, 22.5, 0, 1, 1.5, 1.5);
     createBox(crane, 0, 24.5, 0, 2, 3, 2);
-    //addCylinder(crane, 0, 23.5, 0, 1, 1, 1);
-
+    addCabin(crane, 0, 25, 2);
+    
+    //Jib
     addJib(crane, 0, 27,  11);
+
+    //Counter Jib
     addCounterJib(crane, 0, 26.5, -4);
     addCounterWeigth(crane, 0,  25, -6.5);
     addGuard(crane, -1, 27.5, -6);
     addGuard(crane, 1, 27.5, -6);
-
-    addCylinder(crane, 0, 18.5, 17, 14, 0.1, 0.1);
-    addHook(crane, 0, 10.5, 17);
-
-    //addCylinder(crane, 0, 27.5, 0, 5, 0.5, 1); //Brincadeira
     addTower(crane, 0, 29.5, 0);
 
     scene.add(crane);
+    
     crane.position.set(x, y, z);
 }
 
@@ -108,6 +132,7 @@ function createScene() {
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0); // Create crane in the scene
+    createKart(0, 25.5, 17);
 }
 
 // Function to create camera
@@ -147,6 +172,17 @@ function createCamera() {
 
 }
 
+function onKeyUp(event) {
+    switch (event.keyCode) {
+        case 69: // E key
+            moveRight = false;
+            break;
+        case 68: // D key
+            moveLeft = false;
+            break;
+    }
+}
+
 // Function to handle key presses
 function onKeyDown(e) {
     'use strict';
@@ -156,6 +192,12 @@ function onKeyDown(e) {
             activeCameraIndex = (activeCameraIndex + 1) % cameras.length;
             activeCamera = cameras[activeCameraIndex];
             break;
+        case 69: // E key
+            moveRight = true;
+            break;
+        case 68: // D key
+            moveLeft = true;
+            break;  
     }
 }
 
@@ -167,7 +209,8 @@ function init() {
     document.body.appendChild(renderer.domElement);
     createScene(); // Create the scene
     createCamera(); // Create the camera
-    window.addEventListener("keydown", onKeyDown); // Add event listener for key presses
+    document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
+    document.addEventListener("keyup", onKeyUp);
 }
 
 // Function to render the scene
@@ -180,6 +223,14 @@ function render() {
 function animate() {
     'use strict';
     requestAnimationFrame(animate);
+
+    if (moveLeft && kart.position.z > 4) {
+        kart.position.z -= 0.1; // Move left
+    }
+    if (moveRight && kart.position.z < 20) {
+        kart.position.z += 0.1; // Move right
+    }
+
     render();
 }
 

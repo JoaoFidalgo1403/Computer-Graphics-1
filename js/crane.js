@@ -1,3 +1,13 @@
+/**
+ * Authors:
+ *  - João Fidalgo, ist1103471
+ *  - Tomás Cruz, ist1103425
+ *  - Rodrigo Friães, ist1104139
+ * 
+ * NOTES (to delete later):
+ *  - karOffset is unused, thus may be removed
+ */
+
 import * as THREE from 'three';
 // Define variables
 var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, scene, renderer;
@@ -6,18 +16,22 @@ var activeCameraIndex = 0; // Initialize activeCameraIndex
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
 
 var kart, topStruct, hook;
-var kartOffset = new THREE.Vector3();
+//var kartOffset = new THREE.Vector3();
 
 const ROTATION_SPEED = 0.005;
 const MOVEMENT_SPEED = 0.1;
 
 const MAX_ROTATION = Math.PI / 2;
-const MIN_ROTATION = -Math.PI / 2
+const MIN_ROTATION = -Math.PI / 2;
+
+const MAX_HEIGHT = 13.9;
+const MIN_HEIGHT = -8;
 
 // Define cameras array
 var cameras = [];
 
 
+// Builder functions
 function createBox(obj, x, y, z, width, height, length) {
     'use strict'
     geometry = new THREE.BoxGeometry(width, height, length);
@@ -34,6 +48,7 @@ function createCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
     obj.add(mesh);
 }
 
+// Group creation
 function createKart(x, y, z) {
     'use strict';
     kart = new THREE.Object3D();
@@ -43,18 +58,19 @@ function createKart(x, y, z) {
 
     scene.add(kart);
     kart.position.set(x, y, z);
-    kartOffset.copy(kart.position).sub(topStruct.position);
+    //kartOffset.copy(kart.position).sub(topStruct.position);
 }
+
 
 function createHook(y, z) {
     'use strict';
     hook = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
 
-    createCylinder(kart, 0, -7.5, 0, 14, 0.1, 0.1);    // Cable
-    createBox(kart, 0, -15.5, 0, 1, 2, 1);             // Hook
+    createCylinder(hook, 0, -7.5, 0, 14, 0.1, 0.1);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
+    createBox(hook, 0, -15.5, 0, 1, 2, 1);             // Hook
 
-    scene.add(hook);
+    kart.add(hook);
     hook.position.set(0, y, z);
 }
 
@@ -272,12 +288,18 @@ function animate() {
         camera6.position.z += MOVEMENT_SPEED; 
     }
 
-    if (moveDown && kart.position.y > 0) { // Move down
-        kart.position.y -= MOVEMENT_SPEED;
+    if (moveDown && hook.position.y > MIN_HEIGHT) { // Move down
+        hook.position.y -= MOVEMENT_SPEED;
+        const scaleChangeFactor = MOVEMENT_SPEED / 14;
+        hook.children[0].scale.y += scaleChangeFactor;
+        hook.children[0].position.y += (14 * scaleChangeFactor) / 2;
         camera6.position.y -= MOVEMENT_SPEED;
     }
-    if (moveUp && kart.position.y < 18) { // Move up
-        kart.position.y += MOVEMENT_SPEED;
+    if (moveUp && hook.position.y < MAX_HEIGHT) { // Move up
+        hook.position.y += MOVEMENT_SPEED;
+        const scaleChangeFactor = MOVEMENT_SPEED / 14;
+        hook.children[0].scale.y -= scaleChangeFactor;
+        hook.children[0].position.y -= (14 * scaleChangeFactor) / 2;
         camera6.position.y += MOVEMENT_SPEED;
     }
 

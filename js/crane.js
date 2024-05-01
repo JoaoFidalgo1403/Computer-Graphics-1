@@ -3,10 +3,10 @@ import * as THREE from 'three';
 var activeCamera, camera1, camera2, camera3, camera4, camera5, scene, renderer;
 var geometry, material, mesh;
 var activeCameraIndex = 0; // Initialize activeCameraIndex
-var moveLeft = false;
-var moveRight = false;
+var moveLeft = false, moveRight = false, rotateLeft = false, rotateRight = false;
 
-var kart;
+var kart, topStruct;
+var kartOffset = new THREE.Vector3();
 
 // Define cameras array
 var cameras = [];
@@ -91,39 +91,49 @@ function createKart(x, y, z) {
     scene.add(kart);
 
     kart.position.set(x, y, z);
+
+    kartOffset.copy(kart.position).sub(topStruct.position);
 }
 
-// Function to create crane
-function createCrane(x, y, z) {
+function createBaseStruct(x, y, z) {
     'use strict';
-    var crane = new THREE.Object3D();
+    var baseStruct = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
-    //addTriangularPrism(crane, -11, 24.5 , 0, 20, 1, 1); //Da problemas
-    //addCylinder(crane, 0, 23.5, 0, 1, 1, 1);
-    //addCylinder(crane, 0, 27.5, 0, 5, 0.5, 1); //Brincadeira
 
-    //Base
-    addCraneBase(crane, 0, 1, 0);
-    addCranePillar(crane, 0, 12, 0);
+    addCraneBase(baseStruct, 0, 0, 0);
+    addCranePillar(baseStruct, 0, 11, 0);
+
+    scene.add(baseStruct);
     
+    baseStruct.position.set(x, y, z);
+
+}
+
+function createTopStruct(x, y, z) {
+    'use strict';
+    topStruct = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
     //Elemento rotativo
-    addCylinder(crane, 0, 22.5, 0, 1, 1.5, 1.5);
-    createBox(crane, 0, 24.5, 0, 2, 3, 2);
-    addCabin(crane, 0, 25, 2);
+    addCylinder(topStruct, 0, 0, 0, 1, 1.5, 1.5);
+    createBox(topStruct, 0, 2, 0, 2, 3, 2);
+    addCabin(topStruct, 0, 2.5, 2);
     
     //Jib
-    addJib(crane, 0, 27,  11);
+    addJib(topStruct, 0, 4.5,  11);
 
     //Counter Jib
-    addCounterJib(crane, 0, 26.5, -4);
-    addCounterWeigth(crane, 0,  25, -6.5);
-    addGuard(crane, -1, 27.5, -6);
-    addGuard(crane, 1, 27.5, -6);
-    addTower(crane, 0, 29.5, 0);
+    addCounterJib(topStruct, 0, 4, -4);
+    addCounterWeigth(topStruct, 0,  2.5, -6.5);
+    addGuard(topStruct, -1, 5, -6);
+    addGuard(topStruct, 1, 5, -6);
+    addTower(topStruct, 0, 7, 0);
 
-    scene.add(crane);
-    
-    crane.position.set(x, y, z);
+    createKart(0, 3, 17);
+    topStruct.add(kart);
+
+    scene.add(topStruct);
+    topStruct.position.set(x, y, z);
+
 }
 
 // Function to create scene
@@ -131,8 +141,8 @@ function createScene() {
     'use strict';
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
-    createCrane(0, 0, 0); // Create crane in the scene
-    createKart(0, 25.5, 17);
+    createBaseStruct(0, 1, 0); // Create crane's base structure in the scene
+    createTopStruct(0, 22.5, 0);
 }
 
 // Function to create camera
@@ -178,11 +188,24 @@ function createCamera() {
 
 function onKeyUp(event) {
     switch (event.keyCode) {
+        //KART movement
+        case 101: // e key
         case 69: // E key
             moveRight = false;
             break;
+        case 100: // d key
         case 68: // D key
             moveLeft = false;
+            break;
+
+        //CRANE rotation
+        case 97: // a key
+        case 65: // A key
+            rotateRight = false;
+            break;
+        case 113: // q key
+        case 81: // Q key
+            rotateLeft = false;
             break;
     }
 }
@@ -191,17 +214,32 @@ function onKeyUp(event) {
 function onKeyDown(e) {
     'use strict';
     switch (e.keyCode) {
-        case 67: // Toggle between cameras using 'C' key
-        case 99:
+        //CAMERA switching
+        case 99: // c key
+        case 67: // C key
             activeCameraIndex = (activeCameraIndex + 1) % cameras.length;
             activeCamera = cameras[activeCameraIndex];
             break;
+
+        //KART movement
+        case 101: // e key
         case 69: // E key
             moveRight = true;
             break;
+        case 100: // d key
         case 68: // D key
             moveLeft = true;
             break;  
+
+        //CRANE rotation
+        case 97: // a key
+        case 65: // A key
+            rotateRight = true;
+            break;
+        case 113: // q key
+        case 81: // Q key
+            rotateLeft = true;
+            break;
     }
 }
 
@@ -234,6 +272,25 @@ function animate() {
     }
     if (moveRight && kart.position.z < 20) {
         kart.position.z += 0.1; // Move right
+    }
+
+    //kart.position.copy(topStruct.localToWorld(kartOffset.clone()));
+
+    var rotationSpeed = 0.005; 
+
+    var maxRotation = Math.PI / 2;
+    var minRotation = -Math.PI / 2; 
+    if (rotateLeft && topStruct.rotation.y > minRotation) {
+        topStruct.rotation.y -= rotationSpeed;
+        if (topStruct.rotation.y < minRotation) {
+            topStruct.rotation.y = minRotation;
+        }
+    }
+    if (rotateRight && topStruct.rotation.y < maxRotation) {
+        topStruct.rotation.y += rotationSpeed;
+        if (topStruct.rotation.y > maxRotation) {
+            topStruct.rotation.y = maxRotation;
+        }
     }
 
     render();

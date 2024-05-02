@@ -10,12 +10,13 @@
 
 import * as THREE from 'three';
 // Define variables
-var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, scene, renderer;
+var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
 var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
 var ball;
+var wireframe = true;
 
-var kart, topStruct, hook;
+var kart, topStruct, hook, claws;
 //var kartOffset = new THREE.Vector3();
 
 const ROTATION_SPEED = 0.005;
@@ -24,38 +25,63 @@ const MOVEMENT_SPEED = 0.1;
 const MAX_ROTATION = Math.PI / 2;
 const MIN_ROTATION = -Math.PI / 2;
 
-const MAX_HEIGHT = 13.9;
-const MIN_HEIGHT = -8;
+const MAX_HEIGHT = -1.5;
+const MIN_HEIGHT = -23.3;
 
 // Define cameras array
 var cameras = [];
 
 
 // Builder functions
-function buildBox(obj, x, y, z, width, height, length) {
+function buildBox(obj, x, y, z, width, height, length, color) {
     'use strict'
     geometry = new THREE.BoxGeometry(width, height, length);
+    var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
     mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
 
-function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
+function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom, color) {
     'use strict';
     var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 8);
+    var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    obj.add(mesh);
+}
+
+function buildTetra(obj, x, y, z, height, radius, color) {
+    'use strict';
+    var geometry = new THREE.CylinderGeometry(radius, 0, height, 3);
+    var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
     var mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
 
 // Group creation
+function createClaws(y, z) {
+    'use strict'
+    claws = new THREE.Object3D();
+
+    buildTetra(claws, 0.35, 0, 0, 1.25, 0.25, 0x000000);
+    buildTetra(claws, 0, 0, 0.35, 1.25, 0.25, 0x000000);
+    buildTetra(claws, -0.35, 0, 0, 1.25, 0.25, 0x000000);
+    buildTetra(claws, 0, 0, -0.35, 1.25, 0.25, 0x000000);
+
+    hook.add(claws);
+    claws.position.set(0, y, z);
+}
+
 function createHook(y, z) {
     'use strict';
     hook = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
 
-    buildCylinder(hook, 0, -7.5, 0, 14, 0.1, 0.1);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
-    buildBox(hook, 0, -15.5, 0, 1, 2, 1);             // Hook
+    buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
+    buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
+
+    createClaws(-1.5, 0, 0x000000);
 
     hook.add(camera6);
     kart.add(hook);
@@ -65,22 +91,18 @@ function createHook(y, z) {
 function createKart(x, y, z) {
     'use strict';
     kart = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    buildBox(kart, 0, 0, 0, 2, 1, 2);  // Kart
-    createHook(0, 0);
+    buildBox(kart, 0, 0, 0, 2, 1, 2, 0x28910E);  // Kart
+    createHook(-15.5, 0);
 
     scene.add(kart);
     kart.position.set(x, y, z);
-    //kartOffset.copy(kart.position).sub(topStruct.position);
 }
 
 function createBaseStruct(x, y, z) {
     'use strict';
     var baseStruct = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-
-    buildBox(baseStruct, 0, 0, 0, 4, 2, 4);    // Crane Base
-    buildBox(baseStruct, 0, 11, 0, 2, 20, 2);  // Crane Pillar  
+    buildBox(baseStruct, 0, 0, 0, 4, 2, 4, 0x000000);    // Crane Base
+    buildBox(baseStruct, 0, 11, 0, 2, 20, 2, 0xC35900);  // Crane Pillar  
 
     scene.add(baseStruct);
     baseStruct.position.set(x, y, z);
@@ -90,22 +112,21 @@ function createBaseStruct(x, y, z) {
 function createTopStruct(x, y, z) {
     'use strict';
     topStruct = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
     //Elemento rotativo
-    buildCylinder(topStruct, 0, 0, 0, 1, 1.5, 1.5);    // Turntable
-    buildBox(topStruct, 0, 2, 0, 2, 3, 2);             // Tower Peak
-    buildBox(topStruct, 0, 2.5, 2, 2, 2, 2);           // Cabin
+    buildCylinder(topStruct, 0, 0, 0, 1, 1.5, 1.5, 0x000000);    // Turntable
+    buildBox(topStruct, 0, 2, 0, 2, 3, 2, 0xC35900);             // Tower Peak
+    buildBox(topStruct, 0, 2.5, 2, 2, 2, 2, 0x28910E);           // Cabin
 
     //Jib
-    buildBox(topStruct, 0, 4.5, 11, 2, 2, 20);       
+    buildBox(topStruct, 0, 4.5, 11, 2, 2, 20, 0x0E8391);       
 
     //Counter Jib
-    buildBox(topStruct, 0, 4, -4, 2, 1, 10);     // CounterJib
-    buildBox(topStruct, 0,  2.5, -6.5, 2, 2, 3); // CounterWeight
-    buildBox(topStruct, -1, 5, -6, 0, 1, 4);     // Railing #1
-    buildBox(topStruct, 1, 5, -6, 0, 1, 4);      // Railing #2
-    
-    buildBox(topStruct, 0, 7, 0, 2, 5, 2);       // Tower
+    buildBox(topStruct, 0, 4, -4, 2, 1, 10, 0x0E8391);     // CounterJib
+    buildBox(topStruct, 0,  2.5, -6.5, 2, 2, 3, 0x000000); // CounterWeight
+    buildBox(topStruct, -1, 5, -6, 0, 1, 4, 0x000000);     // Railing #1
+    buildBox(topStruct, 1, 5, -6, 0, 1, 4, 0x000000);      // Railing #2
+
+    buildBox(topStruct, 0, 7, 0, 2, 5, 2, 0xC35900);       // Tower
 
     createKart(0, 3, 17);   // Kart
     topStruct.add(kart);
@@ -123,8 +144,8 @@ function createBall(x, y, z) {
     'use strict';
 
     ball = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
-    geometry = new THREE.SphereGeometry(1, 15, 15);
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });
+    geometry = new THREE.SphereGeometry(1, 10, 10);
     mesh = new THREE.Mesh(geometry, material);
 
     ball.add(mesh);
@@ -174,9 +195,18 @@ function createCameras() {
     camera5.position.set(30, 30, 30);
     camera5.lookAt(0, 0, 0);
 
-    camera6 = new THREE.PerspectiveCamera(120, window.innerWidth / window.innerHeight, 1, 1000);
+    camera6 = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 1000);
     camera6.position.set(0, -16, 0);  // Set initial position, adjust as needed
     camera6.lookAt(0, -25.5, 0);
+    camera6.rotation.z = Math.PI;
+
+
+    //to remove
+    teste = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+    teste.position.set(0, 15, 10);
+    teste.lookAt(0, 15, 17);
+    teste.zoom *= 1.9;
+    teste.updateProjectionMatrix();
 
 
     cameras.push(camera1);
@@ -185,6 +215,7 @@ function createCameras() {
     cameras.push(camera4);
     cameras.push(camera5);
     cameras.push(camera6);
+    cameras.push(teste);
 
     activeCamera = camera5; 
 }
@@ -242,6 +273,9 @@ function onKeyDown(e) {
         case 54:    // '6' key
             activeCamera = cameras[5];
             break;
+        case 55:
+            activeCamera = cameras[6]
+            break;
 
         //KART movement
         case 87:    // W(w) key
@@ -286,7 +320,7 @@ function init() {
 // Function to render the scene
 function render() {
     'use strict';
-    renderer.setClearColor(0xEBBEF8);   // Background color set to Light yellow
+    renderer.setClearColor(0xFFFFFF);   // Background color set to Light yellow
     renderer.render(scene, activeCamera);
 }
 

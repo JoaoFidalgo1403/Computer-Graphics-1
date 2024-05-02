@@ -15,6 +15,9 @@ var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
 var ball;
 var wireframe = true;
+var openClaws = false;
+var closeClaws = false;
+var clawOpening = 0;
 
 var kart, topStruct, hook, claws;
 //var kartOffset = new THREE.Vector3();
@@ -203,7 +206,7 @@ function createCameras() {
 
     //to remove
     teste = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
-    teste.position.set(0, 15, 10);
+    teste.position.set(0, -10, 17);
     teste.lookAt(0, 15, 17);
     teste.zoom *= 1.9;
     teste.updateProjectionMatrix();
@@ -246,6 +249,14 @@ function onKeyUp(e) {
         case 81:    // Q(q) key
             rotateLeft = false;
             break;
+
+        case 82: // R key
+            openClaws = false;
+            break;
+        case 70: // F key
+            closeClaws = false;
+            break;
+
     }
 }
 
@@ -299,6 +310,13 @@ function onKeyDown(e) {
             break;
         case 81:    // Q(q) key
             rotateLeft = true;
+            break;
+
+        case 82: // R key
+            openClaws = true;
+            break;
+        case 70: // F key
+            closeClaws = true;
             break;
     }
 }
@@ -363,6 +381,22 @@ function animate() {
             topStruct.rotation.y = MAX_ROTATION;
         }
     }
+
+
+    if (openClaws) {
+        claws.children[0].rotation.z += 0.01; // Adjust the closing speed as needed
+        claws.children[1].rotation.x -= 0.01; // Adjust the closing speed as needed
+        claws.children[2].rotation.z -= 0.01; // Adjust the closing speed as needed
+        claws.children[3].rotation.x += 0.01; // Adjust the closing speed as needed   
+    }
+
+    if (closeClaws) {
+        claws.children[0].rotation.z -= 0.01; // Adjust the closing speed as needed
+        claws.children[1].rotation.x += 0.01; // Adjust the closing speed as needed
+        claws.children[2].rotation.z += 0.01; // Adjust the closing speed as needed
+        claws.children[3].rotation.x -= 0.01; // Adjust the closing speed as needed
+    }
+    
 
     render();
 }

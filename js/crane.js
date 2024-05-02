@@ -12,8 +12,8 @@ import * as THREE from 'three';
 // Define variables
 var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, scene, renderer;
 var geometry, material, mesh;
-var activeCameraIndex = 0; // Initialize activeCameraIndex
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
+var ball;
 
 var kart, topStruct, hook;
 //var kartOffset = new THREE.Vector3();
@@ -32,7 +32,7 @@ var cameras = [];
 
 
 // Builder functions
-function createBox(obj, x, y, z, width, height, length) {
+function buildBox(obj, x, y, z, width, height, length) {
     'use strict'
     geometry = new THREE.BoxGeometry(width, height, length);
     mesh = new THREE.Mesh(geometry, material);
@@ -40,7 +40,7 @@ function createBox(obj, x, y, z, width, height, length) {
     obj.add(mesh);
 }
 
-function createCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
+function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
     'use strict';
     var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 8);
     var mesh = new THREE.Mesh(geometry, material);
@@ -49,11 +49,24 @@ function createCylinder(obj, x, y, z, height, radiusTop, radiusBottom) {
 }
 
 // Group creation
+function createHook(y, z) {
+    'use strict';
+    hook = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+
+    buildCylinder(hook, 0, -7.5, 0, 14, 0.1, 0.1);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
+    buildBox(hook, 0, -15.5, 0, 1, 2, 1);             // Hook
+
+    hook.add(camera6);
+    kart.add(hook);
+    hook.position.set(0, y, z);
+}
+
 function createKart(x, y, z) {
     'use strict';
     kart = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    createBox(kart, 0, 0, 0, 2, 1, 2);  // Kart
+    buildBox(kart, 0, 0, 0, 2, 1, 2);  // Kart
     createHook(0, 0);
 
     scene.add(kart);
@@ -61,27 +74,13 @@ function createKart(x, y, z) {
     //kartOffset.copy(kart.position).sub(topStruct.position);
 }
 
-
-function createHook(y, z) {
-    'use strict';
-    hook = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-
-    createCylinder(hook, 0, -7.5, 0, 14, 0.1, 0.1);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
-    createBox(hook, 0, -15.5, 0, 1, 2, 1);             // Hook
-
-    kart.add(hook);
-    hook.position.set(0, y, z);
-}
-
-
 function createBaseStruct(x, y, z) {
     'use strict';
     var baseStruct = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
 
-    createBox(baseStruct, 0, 0, 0, 4, 2, 4);    // Crane Base
-    createBox(baseStruct, 0, 11, 0, 2, 20, 2);  // Crane Pillar  
+    buildBox(baseStruct, 0, 0, 0, 4, 2, 4);    // Crane Base
+    buildBox(baseStruct, 0, 11, 0, 2, 20, 2);  // Crane Pillar  
 
     scene.add(baseStruct);
     baseStruct.position.set(x, y, z);
@@ -93,20 +92,20 @@ function createTopStruct(x, y, z) {
     topStruct = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
     //Elemento rotativo
-    createCylinder(topStruct, 0, 0, 0, 1, 1.5, 1.5);    // Turntable
-    createBox(topStruct, 0, 2, 0, 2, 3, 2);             // Tower Peak
-    createBox(topStruct, 0, 2.5, 2, 2, 2, 2);           // Cabin
+    buildCylinder(topStruct, 0, 0, 0, 1, 1.5, 1.5);    // Turntable
+    buildBox(topStruct, 0, 2, 0, 2, 3, 2);             // Tower Peak
+    buildBox(topStruct, 0, 2.5, 2, 2, 2, 2);           // Cabin
 
     //Jib
-    createBox(topStruct, 0, 4.5, 11, 2, 2, 20);       
+    buildBox(topStruct, 0, 4.5, 11, 2, 2, 20);       
 
     //Counter Jib
-    createBox(topStruct, 0, 4, -4, 2, 1, 10);     // CounterJib
-    createBox(topStruct, 0,  2.5, -6.5, 2, 2, 3); // CounterWeight
-    createBox(topStruct, -1, 5, -6, 0, 1, 4);     // Railing #1
-    createBox(topStruct, 1, 5, -6, 0, 1, 4);      // Railing #2
+    buildBox(topStruct, 0, 4, -4, 2, 1, 10);     // CounterJib
+    buildBox(topStruct, 0,  2.5, -6.5, 2, 2, 3); // CounterWeight
+    buildBox(topStruct, -1, 5, -6, 0, 1, 4);     // Railing #1
+    buildBox(topStruct, 1, 5, -6, 0, 1, 4);      // Railing #2
     
-    createBox(topStruct, 0, 7, 0, 2, 5, 2);       // Tower
+    buildBox(topStruct, 0, 7, 0, 2, 5, 2);       // Tower
 
     createKart(0, 3, 17);   // Kart
     topStruct.add(kart);
@@ -115,14 +114,33 @@ function createTopStruct(x, y, z) {
     topStruct.position.set(x, y, z);
 }
 
+function createCrane(x, y, z) {
+    createBaseStruct(x, y + 1, z);
+    createTopStruct(x, y + 22.5, z);
+}
+
+function createBall(x, y, z) {
+    'use strict';
+
+    ball = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
+    geometry = new THREE.SphereGeometry(1, 15, 15);
+    mesh = new THREE.Mesh(geometry, material);
+
+    ball.add(mesh);
+    ball.position.set(x, y, z);
+
+    scene.add(ball);
+}
+
 
 // Function to create scene
 function createScene() {
     'use strict';
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
-    createBaseStruct(0, 1, 0);      // Base structure
-    createTopStruct(0, 22.5, 0);    // Top Structure
+    createCrane(0, 0, 0);
+    createBall(4, 1, 16);
 }
 
 
@@ -156,10 +174,10 @@ function createCameras() {
     camera5.position.set(30, 30, 30);
     camera5.lookAt(0, 0, 0);
 
-    //camera6 = new THREE.PerspectiveCamera(200, window.innerWidth / window.innerHeight, 1, 1000);
-    camera6 = new THREE.OrthographicCamera(left, right, top, bottom, near, far);    // TO DELETE
-    camera6.position.set(0, kart.position.y, kart.position.z);
-    camera6.lookAt(0, 0, kart.position.z);
+    camera6 = new THREE.PerspectiveCamera(120, window.innerWidth / window.innerHeight, 1, 1000);
+    camera6.position.set(0, -16, 0);  // Set initial position, adjust as needed
+    camera6.lookAt(0, -25.5, 0);
+
 
     cameras.push(camera1);
     cameras.push(camera2);
@@ -258,8 +276,8 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
-    createScene(); // Create the scene
     createCameras(); // Create the camera
+    createScene(); // Create the scene
     document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
     document.addEventListener("keyup", onKeyUp);
 }
@@ -268,7 +286,7 @@ function init() {
 // Function to render the scene
 function render() {
     'use strict';
-    renderer.setClearColor(0x80d1d1);   // Background color set to Cyan
+    renderer.setClearColor(0xEBBEF8);   // Background color set to Light yellow
     renderer.render(scene, activeCamera);
 }
 
@@ -280,12 +298,9 @@ function animate() {
     
     if (moveBackward && kart.position.z > 4) { // Move backward
         kart.position.z -= MOVEMENT_SPEED;
-        camera6.position.z -= MOVEMENT_SPEED; 
-
     }
     if (moveForward && kart.position.z < 20) {  // Move forward
         kart.position.z += MOVEMENT_SPEED;
-        camera6.position.z += MOVEMENT_SPEED; 
     }
 
     if (moveDown && hook.position.y > MIN_HEIGHT) { // Move down
@@ -293,27 +308,23 @@ function animate() {
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
         hook.children[0].scale.y += scaleChangeFactor;
         hook.children[0].position.y += (14 * scaleChangeFactor) / 2;
-        camera6.position.y -= MOVEMENT_SPEED;
     }
     if (moveUp && hook.position.y < MAX_HEIGHT) { // Move up
         hook.position.y += MOVEMENT_SPEED;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
         hook.children[0].scale.y -= scaleChangeFactor;
         hook.children[0].position.y -= (14 * scaleChangeFactor) / 2;
-        camera6.position.y += MOVEMENT_SPEED;
     }
 
 
     if (rotateLeft && topStruct.rotation.y > MIN_ROTATION) {
         topStruct.rotation.y -= ROTATION_SPEED;
-        camera6.rotation.z -= ROTATION_SPEED;
         if (topStruct.rotation.y < MIN_ROTATION) {
             topStruct.rotation.y = MIN_ROTATION;
         }
     }
     if (rotateRight && topStruct.rotation.y < MAX_ROTATION) {
         topStruct.rotation.y += ROTATION_SPEED;
-        camera6.rotation.z += ROTATION_SPEED;
         if (topStruct.rotation.y > MAX_ROTATION) {
             topStruct.rotation.y = MAX_ROTATION;
         }

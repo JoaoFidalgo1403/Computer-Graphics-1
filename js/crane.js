@@ -17,16 +17,24 @@ var ball;
 var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
-var clawOpening = 0;
 
 var kart, topStruct, hook, claws;
 //var kartOffset = new THREE.Vector3();
+
+const FORTH = 1;
+const BACK = 2;
+const RIGHT = 3;
+const LEFT = 4;
+
 
 const ROTATION_SPEED = 0.005;
 const MOVEMENT_SPEED = 0.1;
 
 const MAX_ROTATION = Math.PI / 2;
 const MIN_ROTATION = -Math.PI / 2;
+
+const MAX_CLAW_OPENING =  Math.PI / 3;
+const MIN_CLAW_OPENING =  - Math.PI / 12;
 
 const MAX_HEIGHT = -1.5;
 const MIN_HEIGHT = -23.3;
@@ -64,14 +72,54 @@ function buildTetra(obj, x, y, z, height, radius, color) {
 }
 
 // Group creation
+
+function createClaw(x, y, z, orientation){
+    'use strict';
+    var claw = new THREE.Object3D();
+    switch(orientation){
+        case FORTH:
+            buildBox(claw, 0, -0.5, 0.5, 0.5, 1.25, 0.25, 0x000000);  
+            buildBox(claw, 0, -1.3, 0.7, 0.5, 0.75, 0.25, 0x000000);
+            claw.children[0].rotation.x = - Math.PI / 4;
+            claw.children[1].rotation.x = Math.PI / 12;
+            break;
+        case BACK:
+            buildBox(claw, 0, -0.5, -0.5, 0.5, 1.25, 0.25, 0x000000);  
+            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0x000000);
+            claw.children[0].rotation.x = Math.PI / 4;
+            claw.children[1].rotation.x = - Math.PI / 12;
+            break;
+        case RIGHT:
+            buildBox(claw, 0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
+            buildBox(claw, 0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x000000);
+            claw.children[0].rotation.z = Math.PI / 4;
+            claw.children[1].rotation.z = - Math.PI / 12;
+            break;
+        case LEFT:
+            buildBox(claw, -0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
+            buildBox(claw, -0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x000000);
+            claw.children[0].rotation.z = - Math.PI / 4;
+            claw.children[1].rotation.z =  Math.PI / 12;
+            break;
+        
+    }
+    
+    claws.add(claw);
+    claw.position.set(x, y, z);
+
+}
 function createClaws(y, z) {
     'use strict'
     claws = new THREE.Object3D();
+    createClaw(0, 0.5, 0.5, FORTH);
+    createClaw(0, 0.5, -0.5, BACK);
+    createClaw(0.5, 0.5, 0, RIGHT);
+    createClaw(-0.5, 0.5, 0, LEFT);
 
-    buildTetra(claws, 0.35, 0, 0, 1.25, 0.25, 0x000000);
-    buildTetra(claws, 0, 0, 0.35, 1.25, 0.25, 0x000000);
-    buildTetra(claws, -0.35, 0, 0, 1.25, 0.25, 0x000000);
-    buildTetra(claws, 0, 0, -0.35, 1.25, 0.25, 0x000000);
+    //buildTetra(claws, 0.35, 0, 0, 1.25, 0.25, 0x000000);
+    //buildTetra(claws, 0, 0, 0.35, 1.25, 0.25, 0x000000);
+    //buildTetra(claws, -0.35, 0, 0, 1.25, 0.25, 0x000000);
+    //buildTetra(claws, 0, 0, -0.35, 1.25, 0.25, 0x000000);
 
     hook.add(claws);
     claws.position.set(0, y, z);
@@ -199,8 +247,8 @@ function createCameras() {
     camera5.lookAt(0, 0, 0);
 
     camera6 = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 1, 1000);
-    camera6.position.set(0, -16, 0);  // Set initial position, adjust as needed
-    camera6.lookAt(0, -25.5, 0);
+    camera6.position.set(0, -1, 0);  // Set initial position, adjust as needed
+    camera6.lookAt(0, -15, 0);
     camera6.rotation.z = Math.PI;
 
 
@@ -266,7 +314,14 @@ function onKeyDown(e) {
     'use strict';
     switch (e.keyCode) {
         //CAMERA Switching
-        case 49:    // '1' key
+        case 56:    // '8' key
+            scene.traverse(function (node) {
+                if (node instanceof THREE.Mesh) {
+                    node.material.wireframe = !node.material.wireframe;
+                }
+            });
+            break;  
+        case 49:
             activeCamera = cameras[0];
             break;
         case 50:    // '2' key
@@ -285,7 +340,7 @@ function onKeyDown(e) {
             activeCamera = cameras[5];
             break;
         case 55:
-            activeCamera = cameras[6]
+            activeCamera = cameras[6];
             break;
 
         //KART movement
@@ -383,18 +438,18 @@ function animate() {
     }
 
 
-    if (openClaws) {
-        claws.children[0].rotation.z += 0.01; // Adjust the closing speed as needed
-        claws.children[1].rotation.x -= 0.01; // Adjust the closing speed as needed
-        claws.children[2].rotation.z -= 0.01; // Adjust the closing speed as needed
-        claws.children[3].rotation.x += 0.01; // Adjust the closing speed as needed   
+    if (openClaws && -claws.children[0].rotation.x < MAX_CLAW_OPENING) {
+        claws.children[0].rotation.x -= 0.01;
+        claws.children[1].rotation.x += 0.01; 
+        claws.children[2].rotation.z += 0.01; 
+        claws.children[3].rotation.z -= 0.01; 
     }
 
-    if (closeClaws) {
-        claws.children[0].rotation.z -= 0.01; // Adjust the closing speed as needed
-        claws.children[1].rotation.x += 0.01; // Adjust the closing speed as needed
-        claws.children[2].rotation.z += 0.01; // Adjust the closing speed as needed
-        claws.children[3].rotation.x -= 0.01; // Adjust the closing speed as needed
+    if (closeClaws && -claws.children[0].rotation.x > MIN_CLAW_OPENING) {
+        claws.children[0].rotation.x += 0.01; 
+        claws.children[1].rotation.x -= 0.01; 
+        claws.children[2].rotation.z -= 0.01; 
+        claws.children[3].rotation.z += 0.01;  
     }
     
 

@@ -116,11 +116,6 @@ function createClaws(y, z) {
     createClaw(0.4, 0.6, 0, RIGHT);
     createClaw(-0.4, 0.6, 0, LEFT);
 
-    //buildTetra(claws, 0.35, 0, 0, 1.25, 0.25, 0x000000);
-    //buildTetra(claws, 0, 0, 0.35, 1.25, 0.25, 0x000000);
-    //buildTetra(claws, -0.35, 0, 0, 1.25, 0.25, 0x000000);
-    //buildTetra(claws, 0, 0, -0.35, 1.25, 0.25, 0x000000);
-
     hook.add(claws);
     claws.position.set(0, y, z);
 }
@@ -207,6 +202,7 @@ function createCrane(x, y, z) {
     createTopStruct(x, y + 22.5, z);
 }
 
+// RANDOM Objects
 function createBall(x, y, z) {
     'use strict';
 
@@ -219,6 +215,70 @@ function createBall(x, y, z) {
     ball.position.set(x, y, z);
 
     scene.add(ball);
+}
+
+function createTorusKnot(x, y, z, tubularSegments) { // minimum 9!!!
+    'use strict';
+
+    tubularSegments = (typeof tubularSegments !== 'undefined') ? tubularSegments : 20;
+
+    var torusKnot = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: wireframe }); 
+    geometry = new THREE.TorusKnotGeometry(10, 3, tubularSegments, 16); 
+    mesh = new THREE.Mesh(geometry, material);
+
+    torusKnot.add(mesh);
+    torusKnot.position.set(x, y, z);
+
+    scene.add(torusKnot);
+}
+
+function createTorus(x, y, z, tubularSegments) { // minimum 3!!!
+    'use strict';
+
+    tubularSegments = (typeof tubularSegments !== 'undefined') ? tubularSegments : 20;
+
+    var torus = new THREE.Object3D();
+    geometry = new THREE.TorusGeometry(10, 3, 16, tubularSegments); 
+    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    mesh = new THREE.Mesh(geometry, material);
+
+    torus.add(mesh);
+    torus.position.set(x, y, z);
+
+    scene.add(torus);
+}
+
+function createDodecahedron(x, y, z, radius) {
+    'use strict';
+
+    radius = (typeof radius !== 'undefined') ? radius : 1;
+
+    var dodeca = new THREE.Object3D();
+    geometry = new THREE.DodecahedronGeometry(radius, 0);
+    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    mesh = new THREE.Mesh(geometry, material); 
+
+    dodeca.add(mesh);
+    dodeca.position.set(x, y, z);
+
+    scene.add(dodeca);
+}
+
+function createIcosahedron(x, y, z, radius) {
+    'use strict';
+
+    radius = (typeof radius !== 'undefined') ? radius : 1;
+
+    var icosa = new THREE.Object3D();
+    geometry = new THREE.IcosahedronGeometry(radius, 0); 
+    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    mesh = new THREE.Mesh(geometry, material); 
+
+    icosa.add(mesh);
+    icosa.position.set(x, y, z);
+
+    scene.add(icosa);
 }
 
 function createCrate(x, y, z) {
@@ -234,7 +294,6 @@ function createCrate(x, y, z) {
     // Base
     buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x85180c);
 
-
     scene.add(crate);
     crate.position.set(x,y,z);
 }
@@ -247,7 +306,7 @@ function createScene() {
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
     createBall(4, 1, 16);
-    createCrate(10, 0 ,7);
+    createCrate(10, 0 ,7);  // To change (or even random)
 }
 
 
@@ -304,7 +363,7 @@ function createCameras() {
 
     cameras.push(teste);    // to remove
 
-    activeCamera = camera3; 
+    activeCamera = camera5; 
 }
 
 

@@ -29,7 +29,7 @@ var closeClaws = false;
 
 var kart, topStruct, hook, claws;
 
-var randomObjects = false;   // to allow to disable & enable randomised objects [TO DELETE]
+var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
 
 const FORTH = 1;
 const BACK = 2;
@@ -230,50 +230,43 @@ function createBall(x, y, z) {
     scene.add(ball);
 }
 
-function createTorusKnot() { // minimum = 9
+// DEFINED dimensions !!! [TO DELETE] ////////////////////////////////////////////////////////////////////////
+function createTorusKnotArgs(x, y, z, radius) { // minimum = 9
     'use strict';
 
-    const tubularSegments = getRandomInteger(9, 30);
-    const radius = getRandomNumber(0.5, 1.5);
+    const p = getRandomInteger(2, 5);
+    const q = getRandomInteger(3, 6);
 
     var torusKnot = new THREE.Object3D();
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    geometry = new THREE.TorusKnotGeometry(radius, 3, tubularSegments, 16); 
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 60, 16, p, q); 
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
 
-    torusKnot.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
-    torusKnot.position.y = radius/2;
-    torusKnot.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    torusKnot.position.set(x, y, z);
+    torusKnot.rotation.x = Math.PI/2;
 
     scene.add(torusKnot);
 }
 
-function createTorus() { // minimum = 3
-    'use strict';
-
-    const tubularSegments = getRandomInteger(3, 30);
-    const radius = getRandomNumber(0.5, 1.5);
-
+function createTorusArgs(x, y, z, radius) {
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 3, 16, tubularSegments); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 10); 
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
 
-    torus.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
-    torus.position.y = radius/2;
-    torus.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    torus.position.set(x, y, z);
+    torus.rotation.x = Math.PI/2;
 
     scene.add(torus);
 }
 
-function createDodecahedron() {
+function createDodecahedronArgs(x, y, z, radius) {
     'use strict';
 
-    const radius = getRandomNumber(0.5, 1.5);
 
     var dodeca = new THREE.Object3D();
     geometry = new THREE.DodecahedronGeometry(radius, 0);
@@ -281,17 +274,14 @@ function createDodecahedron() {
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
-    dodeca.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
-    dodeca.position.y = radius/2;
-    dodeca.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    dodeca.position.set(x, y, z);
 
     scene.add(dodeca);
 }
 
-function createIcosahedron() {
+function createIcosahedronArgs(x, y, z, radius) {
     'use strict';
 
-    const radius = getRandomNumber(0.5, 1.5);
 
     var icosa = new THREE.Object3D();
     geometry = new THREE.IcosahedronGeometry(radius, 0); 
@@ -299,9 +289,92 @@ function createIcosahedron() {
     mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
-    icosa.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
-    icosa.position.y = radius/2;
-    icosa.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    icosa.position.set(x, y, z);
+
+    scene.add(icosa);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+function createTorusKnot(x, z) { // minimum = 9
+    'use strict';
+
+    const tubularSegments = getRandomInteger(20, 30);
+    const radius = getRandomNumber(0.5, 1);
+    const p = getRandomInteger(2, 5);
+    const q = getRandomInteger(3, 6);
+
+    var torusKnot = new THREE.Object3D();
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q); 
+    mesh = new THREE.Mesh(geometry, material);
+
+    torusKnot.add(mesh);
+
+    torusKnot.position.x = x;
+    torusKnot.position.y = 0.5;
+    torusKnot.position.z = z;
+
+    torusKnot.rotation.x = Math.PI/2;
+
+    scene.add(torusKnot);
+}
+
+function createTorus(x, z) {
+    'use strict';
+
+    const tubularSegments = getRandomInteger(6, 30);
+    const radius = getRandomNumber(0.5, 1);
+
+    var torus = new THREE.Object3D();
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, tubularSegments); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    mesh = new THREE.Mesh(geometry, material);
+
+    torus.add(mesh);
+
+    torus.position.x = x;
+    torus.position.y = 0.5;
+    torus.position.z = z;
+
+    torus.rotation.x = Math.PI/2;
+
+    scene.add(torus);
+}
+
+function createDodecahedron(x, z) {
+    'use strict';
+
+    const radius = getRandomNumber(0.75, 1.5);
+
+    var dodeca = new THREE.Object3D();
+    geometry = new THREE.DodecahedronGeometry(radius, 0);
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    mesh = new THREE.Mesh(geometry, material); 
+
+    dodeca.add(mesh);
+    dodeca.position.x = x;
+    dodeca.position.y = radius-0.125;                               // Just a safety measure to keep objects from floating
+    dodeca.position.z = z;
+
+    scene.add(dodeca);
+}
+
+function createIcosahedron(x, z) {
+    'use strict';
+
+    const radius = getRandomNumber(0.75, 1.5);
+
+    var icosa = new THREE.Object3D();
+    geometry = new THREE.IcosahedronGeometry(radius, 0); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    mesh = new THREE.Mesh(geometry, material); 
+
+    icosa.add(mesh);
+    icosa.position.x = x;
+    icosa.position.y = radius-0.125;                                // Just a safety measure to keep objects from floating
+    icosa.position.z = z;
 
     scene.add(icosa);
 }
@@ -310,24 +383,27 @@ function createRandomisedObjects() {
     const numObjects = getRandomInteger(5, 10);
 
     for(var i=0; i<numObjects; i++) {
+        const r = getRandomNumber(4, 20); // Random radius from crane
+        const angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
+        const x_pos = r*Math.sin(angle);
+        const z_pos = r*Math.cos(angle);
+
         switch (getRandomInteger(0,4)) {
             case 0:
-                createTorusKnot();
+                createTorusKnot(x_pos, z_pos);
                 break;
             case 1:
-                createTorus();
+                createTorus(x_pos, z_pos);
                 break;
             case 2:
-                createDodecahedron();
+                createDodecahedron(x_pos, z_pos);
                 break;
             case 3:
-                createIcosahedron();
+                createIcosahedron(x_pos, z_pos);
                 break;
             case 4:
-            const x = getRandomNumber(MIN_DELTA1, MAX_DELTA1);
-            const height = getRandomNumber(1, 3);
-            const z = getRandomNumber(MIN_DELTA1, MAX_DELTA1);
-            buildBox(scene, x, height/2, z, 1, height, 1, 0xff0000);
+            const height = getRandomNumber(0.5, 2);
+            buildBox(scene, x_pos, height/2, z_pos, 1, height, height, 0xff0000);
                 break;
         }
     }
@@ -365,7 +441,7 @@ function createScene() {
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
-    createBall(4, 1, 16);
+    //createBall(4, 1, 16);
     createCrate(10, 0 ,7);  // To change (or even random)
     if (randomObjects) { createRandomisedObjects(); }
 }
@@ -424,7 +500,7 @@ function createCameras() {
 
     cameras.push(teste);    // to remove
 
-    activeCamera = camera5; 
+    activeCamera = camera3; 
 }
 
 
@@ -583,17 +659,11 @@ function animate() {
     }
 
 
-    if (rotateLeft && topStruct.rotation.y > MIN_ROTATION) {    // Rotate left
+    if (rotateLeft) {    // Rotate left [NO LIMIT]
         topStruct.rotation.y -= ROTATION_SPEED;
-        if (topStruct.rotation.y < MIN_ROTATION) {
-            topStruct.rotation.y = MIN_ROTATION;
-        }
     }
-    if (rotateRight && topStruct.rotation.y < MAX_ROTATION) {   // Rotate right
+    if (rotateRight) {   // Rotate right [NO LIMIT]
         topStruct.rotation.y += ROTATION_SPEED;
-        if (topStruct.rotation.y > MAX_ROTATION) {
-            topStruct.rotation.y = MAX_ROTATION;
-        }
     }
 
 

@@ -13,7 +13,7 @@ import * as THREE from 'three';
 var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
 var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
-var ball;
+var ball, crate;
 var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
@@ -111,10 +111,10 @@ function createClaw(x, y, z, orientation){
 function createClaws(y, z) {
     'use strict'
     claws = new THREE.Object3D();
-    createClaw(0, 0.5, 0.5, FORTH);
-    createClaw(0, 0.5, -0.5, BACK);
-    createClaw(0.5, 0.5, 0, RIGHT);
-    createClaw(-0.5, 0.5, 0, LEFT);
+    createClaw(0, 0.6, 0.4, FORTH);
+    createClaw(0, 0.6, -0.4, BACK);
+    createClaw(0.4, 0.6, 0, RIGHT);
+    createClaw(-0.4, 0.6, 0, LEFT);
 
     //buildTetra(claws, 0.35, 0, 0, 1.25, 0.25, 0x000000);
     //buildTetra(claws, 0, 0, 0.35, 1.25, 0.25, 0x000000);
@@ -169,7 +169,15 @@ function createTopStruct(x, y, z) {
     buildBox(topStruct, 0, 2.5, 2, 2, 2, 2, 0x28910E);           // Cabin
 
     //Jib
-    buildBox(topStruct, 0, 4.5, 11, 2, 2, 20, 0x0E8391);       
+    buildBox(topStruct, 0, 4.5, 11, 2, 2, 20, 0x0E8391);  
+    
+    buildCylinder(topStruct, 0.65, 7, 7.5, 14, 0.1, 0.1, 0x000);   // Fore Pendant #1
+    buildCylinder(topStruct, -0.65, 7, 7.5, 14, 0.1, 0.1, 0x000);  // Fore Pendant #2
+    topStruct.children[4].rotation.x -= Math.PI/2.4;
+    topStruct.children[4].rotation.z -= Math.PI/86;
+
+    topStruct.children[5].rotation.x -= Math.PI/2.4;
+    topStruct.children[5].rotation.z += Math.PI/86;
 
     //Counter Jib
     buildBox(topStruct, 0, 4, -4, 2, 1, 10, 0x0E8391);     // CounterJib
@@ -178,6 +186,14 @@ function createTopStruct(x, y, z) {
     buildBox(topStruct, 1, 5, -6, 0, 1, 4, 0x000000);      // Railing #2
 
     buildBox(topStruct, 0, 7, 0, 2, 5, 2, 0xC35900);       // Tower
+
+    buildCylinder(topStruct, 0.65, 6.4, -3.8, 8, 0.1, 0.1, 0x000);  
+    buildCylinder(topStruct, -0.65, 6.4, -3.8, 8, 0.1, 0.1, 0x000);
+    topStruct.children[11].rotation.x += Math.PI/3.5;
+    topStruct.children[11].rotation.z -= Math.PI/86;
+
+    topStruct.children[12].rotation.x += Math.PI/3.5;
+    topStruct.children[12].rotation.z += Math.PI/86;
 
     createKart(0, 3, 17);   // Kart
     topStruct.add(kart);
@@ -205,6 +221,24 @@ function createBall(x, y, z) {
     scene.add(ball);
 }
 
+function createCrate(x, y, z) {
+    'use strict';
+    crate = new THREE.Object3D();
+    
+    // Sides
+    buildBox(crate, 2.375, 2.5, -0.125, 0.25, 5, 4.75, 0x85180c);
+    buildBox(crate, 0.125, 2.5, 2.375, 4.75, 5, 0.25, 0x85180c);
+    buildBox(crate, -2.375, 2.5, 0.125, 0.25, 5, 4.75, 0x85180c);
+    buildBox(crate, -0.125, 2.5, -2.375, 4.75, 5, 0.25, 0x85180c);
+
+    // Base
+    buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x85180c);
+
+
+    scene.add(crate);
+    crate.position.set(x,y,z);
+}
+
 
 // Function to create scene
 function createScene() {
@@ -213,6 +247,7 @@ function createScene() {
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
     createBall(4, 1, 16);
+    createCrate(10, 0 ,7);
 }
 
 
@@ -252,13 +287,13 @@ function createCameras() {
     camera6.rotation.z = Math.PI;
 
 
-    //to remove
+    // to remove
     teste = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
     teste.position.set(0, -10, 17);
     teste.lookAt(0, 15, 17);
     teste.zoom *= 1.9;
     teste.updateProjectionMatrix();
-
+    ////
 
     cameras.push(camera1);
     cameras.push(camera2);
@@ -266,9 +301,10 @@ function createCameras() {
     cameras.push(camera4);
     cameras.push(camera5);
     cameras.push(camera6);
-    cameras.push(teste);
 
-    activeCamera = camera5; 
+    cameras.push(teste);    // to remove
+
+    activeCamera = camera3; 
 }
 
 
@@ -313,15 +349,8 @@ function onKeyUp(e) {
 function onKeyDown(e) {
     'use strict';
     switch (e.keyCode) {
-        //CAMERA Switching
-        case 56:    // '8' key
-            scene.traverse(function (node) {
-                if (node instanceof THREE.Mesh) {
-                    node.material.wireframe = !node.material.wireframe;
-                }
-            });
-            break;  
-        case 49:
+        //CAMERA Switching 
+        case 49:    // '1' key
             activeCamera = cameras[0];
             break;
         case 50:    // '2' key
@@ -339,8 +368,17 @@ function onKeyDown(e) {
         case 54:    // '6' key
             activeCamera = cameras[5];
             break;
-        case 55:
+        case 56:    // '8' key - TO REMOVE
             activeCamera = cameras[6];
+            break;
+        
+        // WIREFRAME activation
+        case 55:    // '7' key
+            scene.traverse(function (node) {
+                if (node instanceof THREE.Mesh) {
+                    node.material.wireframe = !node.material.wireframe;
+                }
+            });
             break;
 
         //KART movement
@@ -367,6 +405,7 @@ function onKeyDown(e) {
             rotateLeft = true;
             break;
 
+        // CLAWS opening
         case 82: // R key
             openClaws = true;
             break;
@@ -424,13 +463,13 @@ function animate() {
     }
 
 
-    if (rotateLeft && topStruct.rotation.y > MIN_ROTATION) {
+    if (rotateLeft && topStruct.rotation.y > MIN_ROTATION) {    // Rotate left
         topStruct.rotation.y -= ROTATION_SPEED;
         if (topStruct.rotation.y < MIN_ROTATION) {
             topStruct.rotation.y = MIN_ROTATION;
         }
     }
-    if (rotateRight && topStruct.rotation.y < MAX_ROTATION) {
+    if (rotateRight && topStruct.rotation.y < MAX_ROTATION) {   // Rotate right
         topStruct.rotation.y += ROTATION_SPEED;
         if (topStruct.rotation.y > MAX_ROTATION) {
             topStruct.rotation.y = MAX_ROTATION;
@@ -438,14 +477,14 @@ function animate() {
     }
 
 
-    if (openClaws && -claws.children[0].rotation.x < MAX_CLAW_OPENING) {
+    if (openClaws && -claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
         claws.children[0].rotation.x -= 0.01;
         claws.children[1].rotation.x += 0.01; 
         claws.children[2].rotation.z += 0.01; 
         claws.children[3].rotation.z -= 0.01; 
     }
 
-    if (closeClaws && -claws.children[0].rotation.x > MIN_CLAW_OPENING) {
+    if (closeClaws && -claws.children[0].rotation.x > MIN_CLAW_OPENING) {   // Close claws
         claws.children[0].rotation.x += 0.01; 
         claws.children[1].rotation.x -= 0.01; 
         claws.children[2].rotation.z -= 0.01; 

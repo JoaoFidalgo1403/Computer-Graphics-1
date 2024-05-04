@@ -5,7 +5,16 @@
  *  - Rodrigo Friães, ist1104139
  * 
  * NOTES (to delete later):
- *  - karOffset is unused, thus may be removed
+ *  - the minimum value of delta1 should be greater (claws clip into crane's base)
+ *  - the way the randomised values are being done results in objects only in the 1st Quadrant
+ *  - dimensions of randomised objects (i.e. min and max) have to be adjusted
+ *  - TO IMPLEMENT -> detect if an object is already at a certain location. If so,
+ * don't allow another object to get placed there.
+ * 
+ *  - A way to maybe fix the issue of the base clipping and location of objects is to use
+ * sines and cosines using a randomised angle (min = 0, max = 2*PI)
+ * 
+ * 
  */
 
 import * as THREE from 'three';
@@ -19,7 +28,8 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws;
-//var kartOffset = new THREE.Vector3();
+
+var randomObjects = false;   // to allow to disable & enable randomised objects [TO DELETE]
 
 const FORTH = 1;
 const BACK = 2;
@@ -38,6 +48,9 @@ const MIN_CLAW_OPENING =  - Math.PI / 12;
 
 const MAX_HEIGHT = -1.5;
 const MIN_HEIGHT = -23.3;
+
+const MAX_DELTA1 = 20;
+const MIN_DELTA1 = 4;
 
 // Define cameras array
 var cameras = [];
@@ -217,71 +230,110 @@ function createBall(x, y, z) {
     scene.add(ball);
 }
 
-function createTorusKnot(x, y, z, tubularSegments) { // minimum 9!!!
+function createTorusKnot() { // minimum = 9
     'use strict';
 
-    tubularSegments = (typeof tubularSegments !== 'undefined') ? tubularSegments : 20;
+    const tubularSegments = getRandomInteger(9, 30);
+    const radius = getRandomNumber(0.5, 1.5);
 
     var torusKnot = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: wireframe }); 
-    geometry = new THREE.TorusKnotGeometry(10, 3, tubularSegments, 16); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    geometry = new THREE.TorusKnotGeometry(radius, 3, tubularSegments, 16); 
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-    torusKnot.position.set(x, y, z);
+
+    torusKnot.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    torusKnot.position.y = radius/2;
+    torusKnot.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
 
     scene.add(torusKnot);
 }
 
-function createTorus(x, y, z, tubularSegments) { // minimum 3!!!
+function createTorus() { // minimum = 3
     'use strict';
 
-    tubularSegments = (typeof tubularSegments !== 'undefined') ? tubularSegments : 20;
+    const tubularSegments = getRandomInteger(3, 30);
+    const radius = getRandomNumber(0.5, 1.5);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(10, 3, 16, tubularSegments); 
-    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    geometry = new THREE.TorusGeometry(radius, 3, 16, tubularSegments); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
-    torus.position.set(x, y, z);
+
+    torus.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    torus.position.y = radius/2;
+    torus.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
 
     scene.add(torus);
 }
 
-function createDodecahedron(x, y, z, radius) {
+function createDodecahedron() {
     'use strict';
 
-    radius = (typeof radius !== 'undefined') ? radius : 1;
+    const radius = getRandomNumber(0.5, 1.5);
 
     var dodeca = new THREE.Object3D();
     geometry = new THREE.DodecahedronGeometry(radius, 0);
-    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
-    dodeca.position.set(x, y, z);
+    dodeca.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    dodeca.position.y = radius/2;
+    dodeca.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
 
     scene.add(dodeca);
 }
 
-function createIcosahedron(x, y, z, radius) {
+function createIcosahedron() {
     'use strict';
 
-    radius = (typeof radius !== 'undefined') ? radius : 1;
+    const radius = getRandomNumber(0.5, 1.5);
 
     var icosa = new THREE.Object3D();
     geometry = new THREE.IcosahedronGeometry(radius, 0); 
-    material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
-    icosa.position.set(x, y, z);
+    icosa.position.x = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
+    icosa.position.y = radius/2;
+    icosa.position.z = getRandomNumber(MIN_DELTA1,MAX_DELTA1);
 
     scene.add(icosa);
 }
 
-function createCrate(x, y, z) {
+function createRandomisedObjects() {
+    const numObjects = getRandomInteger(5, 10);
+
+    for(var i=0; i<numObjects; i++) {
+        switch (getRandomInteger(0,4)) {
+            case 0:
+                createTorusKnot();
+                break;
+            case 1:
+                createTorus();
+                break;
+            case 2:
+                createDodecahedron();
+                break;
+            case 3:
+                createIcosahedron();
+                break;
+            case 4:
+            const x = getRandomNumber(MIN_DELTA1, MAX_DELTA1);
+            const height = getRandomNumber(1, 3);
+            const z = getRandomNumber(MIN_DELTA1, MAX_DELTA1);
+            buildBox(scene, x, height/2, z, 1, height, 1, 0xff0000);
+                break;
+        }
+    }
+}
+
+function createCrate(x, y, z) { // Box without top
     'use strict';
     crate = new THREE.Object3D();
     
@@ -298,6 +350,14 @@ function createCrate(x, y, z) {
     crate.position.set(x,y,z);
 }
 
+function getRandomNumber(min, max) {    // Max = 20; Min = 4
+    return Math.random() * (max-min) + min;
+}
+
+function getRandomInteger(min, max) {
+    return Math.floor(Math.random() * (max-min + 1) + min);
+}
+
 
 // Function to create scene
 function createScene() {
@@ -307,6 +367,7 @@ function createScene() {
     createCrane(0, 0, 0);
     createBall(4, 1, 16);
     createCrate(10, 0 ,7);  // To change (or even random)
+    if (randomObjects) { createRandomisedObjects(); }
 }
 
 

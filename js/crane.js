@@ -32,9 +32,9 @@ const RIGHT = 3;
 const LEFT = 4;
 
 
-const ROTATION_SPEED = 0.005;
-const MOVEMENT_SPEED = 0.1;
-const CLAW_SPEED = 0.01;
+const ROTATION_SPEED = 0.35;
+const MOVEMENT_SPEED = 5;
+const CLAW_SPEED = 0.6;
 
 //const MAX_ROTATION = Math.PI / 2;
 //const MIN_ROTATION = -Math.PI / 2;

@@ -382,11 +382,17 @@ function createIcosahedron(x, z) {
 function createRandomisedObjects() {
     const numObjects = getRandomInteger(5, 10);
 
+    var positions = [];
+    var position_tuple;
+
     for(var i=0; i<numObjects; i++) {
-        const r = getRandomNumber(4, 20); // Random radius from crane
-        const angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
-        const x_pos = r*Math.sin(angle);
-        const z_pos = r*Math.cos(angle);
+        position_tuple = getPosition(positions);
+        positions.push(position_tuple);
+        
+        const x_pos = position_tuple[0];
+        const z_pos = position_tuple[1];
+
+        console.log("Positions = ", positions);
 
         switch (getRandomInteger(0,4)) {
             case 0:
@@ -408,6 +414,37 @@ function createRandomisedObjects() {
         }
     }
 }
+
+function getPosition(positions) {
+    var r, angle, x_pos, z_pos;
+    do {
+        r = getRandomNumber(4, 20); // Random radius from crane
+        angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
+        x_pos = r*Math.sin(angle);
+        z_pos = r*Math.cos(angle);
+    } while (!possiblePosition(positions, x_pos, z_pos));
+
+    return [x_pos, z_pos];
+}
+
+function possiblePosition(positions, x, z) {
+    const x_crate = 10;     // arbitrary value
+    const z_crate = 7;      // arbitrary value
+
+    const num_of_pos = positions.length;
+
+    if (distanceBetweenObjects(x, z, x_crate, z_crate) < 3.75*Math.sqrt(2)) { return false; }
+
+    for(var i=0; i < num_of_pos; i++) {
+        if (distanceBetweenObjects(x, z, positions[i][0], positions[i][1]) < 4) { return false; }
+    }
+    return true;
+}
+
+function distanceBetweenObjects(x1, z1, x2, z2) {
+    return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(z1-z2, 2));
+}
+
 
 function createCrate(x, y, z) { // Box without top
     'use strict';

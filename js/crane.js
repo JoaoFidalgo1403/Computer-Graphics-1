@@ -466,7 +466,7 @@ function createCameras() {
 
     cameras.push(teste);    // to remove [TO DELETE]
 
-    activeCamera = camera3; 
+    activeCamera = camera5; 
 }
 
 

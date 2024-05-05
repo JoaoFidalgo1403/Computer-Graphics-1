@@ -23,6 +23,7 @@ var closeClaws = false;
 var kart, topStruct, hook, claws;
 
 var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
+var hudElement = document.getElementById('hud'); 
 
 const clock = new THREE.Clock();
 
@@ -42,11 +43,29 @@ const CLAW_SPEED = 0.6;
 const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
 
-const MAX_HEIGHT = -1.5;
+const MAX_HEIGHT = -1.6;
 const MIN_HEIGHT = -23.3;
 
 const MAX_DELTA1 = 20;
 const MIN_DELTA1 = 4;
+
+const keyActionMap = {
+    'W': 'Move Forward',
+    'S': 'Move Backward',
+    'A': 'Rotate Left',
+    'D': 'Move Down',
+    'E': 'Move Up',
+    'Q': 'Rotate Right',
+    'R': 'Open Claws',
+    'F': 'Close Claws',
+    '1': 'Front Cam',
+    '2': 'Side Cam',
+    '3': 'Top Cam',
+    '4': 'Orthographic Cam',
+    '5': 'Perspective Cam',
+    '6': 'Claws Cam',
+    '7': 'Wireframe',   
+};
 
 // Define cameras array
 var cameras = [];
@@ -470,7 +489,30 @@ function createCameras() {
 }
 
 
+function initializeKeyMap() {
+    hudElement.innerHTML = '';
+    for (const [key, action] of Object.entries(keyActionMap)) {
+        hudElement.innerHTML += `<li id="key-${key}">${key}: ${action}</li>`;
+    }
+}
+
+
+function updateHUD(key, highlight) {
+    'use strict';
+    var keyElement = document.getElementById(`key-${key}`);
+    if (keyElement) {
+        if (highlight) {
+            keyElement.classList.add('active'); // Add highlight class
+        } else {
+            keyElement.classList.remove('active'); // Remove highlight class
+        }
+    }
+}
+
+
 function onKeyUp(e) {
+    'use strict';
+    updateHUD(e.key.toUpperCase(), false); // Update the HUD
     switch (e.keyCode) {
         //KART movement
         case 87:    // W(w) key
@@ -510,6 +552,7 @@ function onKeyUp(e) {
 // Function to handle key presses
 function onKeyDown(e) {
     'use strict';
+    updateHUD(e.key.toUpperCase(), true); // Update the HUD
     switch (e.keyCode) {
         //CAMERA Switching 
         case 49:    // '1' key
@@ -588,6 +631,7 @@ function init() {
     createScene(); // Create the scene
     document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
     document.addEventListener("keyup", onKeyUp);
+    window.addEventListener("resize", onResize);
 }
 
 
@@ -599,6 +643,18 @@ function render() {
 }
 
 
+// Function to resize the window
+function onResize() {
+    'use strict';
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    if (window.innerHeight > 0 && window.innerWidth) {
+        activeCamera.aspect = renderer.getSize().width/renderer.getSize().height;
+        activeCamera.updateProjectionMatrix();
+    }
+}
+
+
 // Function to animate the scene
 function animate() {
     'use strict';
@@ -606,7 +662,7 @@ function animate() {
 
     requestAnimationFrame(animate);
     
-    if (moveBackward && kart.position.z > 4) { // Move backward
+    if (moveBackward && kart.position.z > 4.1) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;
     }
     if (moveForward && kart.position.z < 20) {  // Move forward
@@ -656,4 +712,5 @@ function animate() {
 
 // Initialize the scene
 init();
+// initializeKeyMap()
 animate();

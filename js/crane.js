@@ -5,15 +5,8 @@
  *  - Rodrigo Friães, ist1104139
  * 
  * NOTES (to delete later):
- *  - the minimum value of delta1 should be greater (claws clip into crane's base)
- *  - the way the randomised values are being done results in objects only in the 1st Quadrant
- *  - dimensions of randomised objects (i.e. min and max) have to be adjusted
- *  - TO IMPLEMENT -> detect if an object is already at a certain location. If so,
- * don't allow another object to get placed there.
  * 
- *  - A way to maybe fix the issue of the base clipping and location of objects is to use
- * sines and cosines using a randomised angle (min = 0, max = 2*PI)
- * 
+ * *Write here anything*
  * 
  */
 
@@ -31,6 +24,8 @@ var kart, topStruct, hook, claws;
 
 var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
 
+const clock = new THREE.Clock();
+
 const FORTH = 1;
 const BACK = 2;
 const RIGHT = 3;
@@ -39,9 +34,10 @@ const LEFT = 4;
 
 const ROTATION_SPEED = 0.005;
 const MOVEMENT_SPEED = 0.1;
+const CLAW_SPEED = 0.01;
 
-const MAX_ROTATION = Math.PI / 2;
-const MIN_ROTATION = -Math.PI / 2;
+//const MAX_ROTATION = Math.PI / 2;
+//const MIN_ROTATION = -Math.PI / 2;
 
 const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
@@ -230,73 +226,6 @@ function createBall(x, y, z) {
     scene.add(ball);
 }
 
-// DEFINED dimensions !!! [TO DELETE] ////////////////////////////////////////////////////////////////////////
-function createTorusKnotArgs(x, y, z, radius) { // minimum = 9
-    'use strict';
-
-    const p = getRandomInteger(2, 5);
-    const q = getRandomInteger(3, 6);
-
-    var torusKnot = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 60, 16, p, q); 
-    mesh = new THREE.Mesh(geometry, material);
-
-    torusKnot.add(mesh);
-
-    torusKnot.position.set(x, y, z);
-    torusKnot.rotation.x = Math.PI/2;
-
-    scene.add(torusKnot);
-}
-
-function createTorusArgs(x, y, z, radius) {
-    var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 10); 
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material);
-
-    torus.add(mesh);
-
-    torus.position.set(x, y, z);
-    torus.rotation.x = Math.PI/2;
-
-    scene.add(torus);
-}
-
-function createDodecahedronArgs(x, y, z, radius) {
-    'use strict';
-
-
-    var dodeca = new THREE.Object3D();
-    geometry = new THREE.DodecahedronGeometry(radius, 0);
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material); 
-
-    dodeca.add(mesh);
-    dodeca.position.set(x, y, z);
-
-    scene.add(dodeca);
-}
-
-function createIcosahedronArgs(x, y, z, radius) {
-    'use strict';
-
-
-    var icosa = new THREE.Object3D();
-    geometry = new THREE.IcosahedronGeometry(radius, 0); 
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material); 
-
-    icosa.add(mesh);
-    icosa.position.set(x, y, z);
-
-    scene.add(icosa);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
@@ -388,7 +317,7 @@ function createRandomisedObjects() {
     for(var i=0; i<numObjects; i++) {
         position_tuple = getPosition(positions);
         positions.push(position_tuple);
-        
+
         const x_pos = position_tuple[0];
         const z_pos = position_tuple[1];
 
@@ -418,7 +347,7 @@ function createRandomisedObjects() {
 function getPosition(positions) {
     var r, angle, x_pos, z_pos;
     do {
-        r = getRandomNumber(4, 20); // Random radius from crane
+        r = getRandomNumber(MIN_DELTA1, MAX_DELTA1); // Random radius from crane
         angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
         x_pos = r*Math.sin(angle);
         z_pos = r*Math.cos(angle);
@@ -463,7 +392,7 @@ function createCrate(x, y, z) { // Box without top
     crate.position.set(x,y,z);
 }
 
-function getRandomNumber(min, max) {    // Max = 20; Min = 4
+function getRandomNumber(min, max) {
     return Math.random() * (max-min) + min;
 }
 
@@ -520,7 +449,7 @@ function createCameras() {
     camera6.rotation.z = Math.PI;
 
 
-    // to remove
+    // to remove [TO DELETE]
     teste = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
     teste.position.set(0, -10, 17);
     teste.lookAt(0, 15, 17);
@@ -535,7 +464,7 @@ function createCameras() {
     cameras.push(camera5);
     cameras.push(camera6);
 
-    cameras.push(teste);    // to remove
+    cameras.push(teste);    // to remove [TO DELETE]
 
     activeCamera = camera3; 
 }
@@ -673,49 +602,51 @@ function render() {
 // Function to animate the scene
 function animate() {
     'use strict';
+    const deltaTime = clock.getDelta();
+
     requestAnimationFrame(animate);
     
     if (moveBackward && kart.position.z > 4) { // Move backward
-        kart.position.z -= MOVEMENT_SPEED;
+        kart.position.z -= MOVEMENT_SPEED * deltaTime;
     }
     if (moveForward && kart.position.z < 20) {  // Move forward
-        kart.position.z += MOVEMENT_SPEED;
+        kart.position.z += MOVEMENT_SPEED * deltaTime;
     }
 
     if (moveDown && hook.position.y > MIN_HEIGHT) { // Move down
-        hook.position.y -= MOVEMENT_SPEED;
+        hook.position.y -= MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
-        hook.children[0].scale.y += scaleChangeFactor;
-        hook.children[0].position.y += (14 * scaleChangeFactor) / 2;
+        hook.children[0].scale.y += scaleChangeFactor * deltaTime;
+        hook.children[0].position.y += ((14 * scaleChangeFactor) / 2) * deltaTime;
     }
     if (moveUp && hook.position.y < MAX_HEIGHT) { // Move up
-        hook.position.y += MOVEMENT_SPEED;
+        hook.position.y += MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
-        hook.children[0].scale.y -= scaleChangeFactor;
-        hook.children[0].position.y -= (14 * scaleChangeFactor) / 2;
+        hook.children[0].scale.y -= scaleChangeFactor * deltaTime;
+        hook.children[0].position.y -= ((14 * scaleChangeFactor) / 2) * deltaTime;
     }
 
 
     if (rotateLeft) {    // Rotate left [NO LIMIT]
-        topStruct.rotation.y -= ROTATION_SPEED;
+        topStruct.rotation.y -= ROTATION_SPEED * deltaTime;
     }
     if (rotateRight) {   // Rotate right [NO LIMIT]
-        topStruct.rotation.y += ROTATION_SPEED;
+        topStruct.rotation.y += ROTATION_SPEED * deltaTime;
     }
 
 
     if (openClaws && -claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
-        claws.children[0].rotation.x -= 0.01;
-        claws.children[1].rotation.x += 0.01; 
-        claws.children[2].rotation.z += 0.01; 
-        claws.children[3].rotation.z -= 0.01; 
+        claws.children[0].rotation.x -= CLAW_SPEED * deltaTime;
+        claws.children[1].rotation.x += CLAW_SPEED * deltaTime; 
+        claws.children[2].rotation.z += CLAW_SPEED * deltaTime; 
+        claws.children[3].rotation.z -= CLAW_SPEED * deltaTime; 
     }
 
     if (closeClaws && -claws.children[0].rotation.x > MIN_CLAW_OPENING) {   // Close claws
-        claws.children[0].rotation.x += 0.01; 
-        claws.children[1].rotation.x -= 0.01; 
-        claws.children[2].rotation.z -= 0.01; 
-        claws.children[3].rotation.z += 0.01;  
+        claws.children[0].rotation.x += CLAW_SPEED * deltaTime; 
+        claws.children[1].rotation.x -= CLAW_SPEED * deltaTime; 
+        claws.children[2].rotation.z -= CLAW_SPEED * deltaTime; 
+        claws.children[3].rotation.z += CLAW_SPEED * deltaTime;  
     }
     
 

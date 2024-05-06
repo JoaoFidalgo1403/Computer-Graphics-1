@@ -90,7 +90,7 @@ function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom, color) {
     obj.add(mesh);
 }
 
-function buildHitboxSphere(obj, x, y, z, radius) {
+function buildHitboxSphere(obj, radius, x, y, z) {
 
     x = (typeof x !== 'undefined') ? x : 0;
     y = (typeof y !== 'undefined') ? y : 0;
@@ -135,9 +135,9 @@ function createClaw(x, y, z, orientation){
         
     }
 
-    buildHitboxSphere(claw, claw.children[1].position.x, 
+    buildHitboxSphere(claw, 0.5, claw.children[1].position.x, 
                             claw.children[1].position.y, 
-                            claw.children[1].position.z, 0.5);   // Rough estimate for hitbox radius (claw's width)
+                            claw.children[1].position.z);   // Rough estimate for hitbox radius (claw's width)
 
     claws.add(claw);
     claw.position.set(x, y, z);
@@ -258,18 +258,18 @@ function createBall(x, y, z) {
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
-    const tubularSegments = getRandomInteger(20, 30);
     const radius = getRandomNumber(0.5, 1);
     const p = getRandomInteger(2, 5);
-    const q = getRandomInteger(3, 6);
+    var q = 0;
+    do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
 
     var torusKnot = new THREE.Object3D();
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q);
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 90, 13, p, q);
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });  
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-    buildHitboxSphere(torusKnot, radius);
+    buildHitboxSphere(torusKnot, 2*radius);
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -282,19 +282,15 @@ function createTorusKnot(x, z) { // minimum = 9
 function createTorus(x, z) {
     'use strict';
 
-    const tubularSegments = getRandomInteger(6, 30);
     const radius = getRandomNumber(0.5, 1);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, tubularSegments); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 90); 
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
-    const hitboxGeometry = new THREE.SphereGeometry(radius);
-    const hitboxMesh = new THREE.Mesh(hitboxGeometry, new THREE.MeshBasicMaterial({ visible: false }));
-
     torus.add(mesh);
-    buildHitboxSphere(torus, radius);
+    buildHitboxSphere(torus, radius+0.5);
     torus.position.x = x;
     torus.position.y = 0.5;
     torus.position.z = z;
@@ -333,9 +329,6 @@ function createIcosahedron(x, z) {
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
-    const hitboxGeometry = new THREE.SphereGeometry(radius);
-    const hitboxMesh = new THREE.Mesh(hitboxGeometry, new THREE.MeshBasicMaterial({ visible: false }));
-
     icosa.add(mesh);
     buildHitboxSphere(icosa, radius);
     icosa.position.x = x;
@@ -352,10 +345,12 @@ function createRandomisedBox(x, z) {
     const side = getRandomNumber(1, 2);
 
     var box = new THREE.Object3D();
-    buildBox(box, x, height/2, z, side, height, side, 0xff0000);
+    buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
 
     const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
-    buildHitboxSphere(box, x, height/2, z, radius);
+    buildHitboxSphere(box, radius);
+
+    box.position.set(x, height/2, z);
 
     scene.add(box);
 }

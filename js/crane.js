@@ -22,7 +22,7 @@ var closeClaws = false;
 
 var kart, topStruct, hook, claws;
 
-var hitboxesVisible = true;     // 
+var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var hudElement = document.getElementById('hud'); 
 
 const clock = new THREE.Clock();

@@ -22,7 +22,7 @@ var closeClaws = false;
 
 var kart, topStruct, hook, claws;
 
-var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
+var hitboxesVisible = true;     // 
 var hudElement = document.getElementById('hud'); 
 
 const clock = new THREE.Clock();
@@ -90,17 +90,20 @@ function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom, color) {
     obj.add(mesh);
 }
 
-function buildTetra(obj, x, y, z, height, radius, color) {
-    'use strict';
-    var geometry = new THREE.CylinderGeometry(radius, 0, height, 3);
-    var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
-    var mesh = new THREE.Mesh(geometry, material);
+function buildHitboxSphere(obj, x, y, z, radius) {
+
+    x = (typeof x !== 'undefined') ? x : 0;
+    y = (typeof y !== 'undefined') ? y : 0;
+    z = (typeof z !== 'undefined') ? z : 0;
+
+    geometry = new THREE.SphereGeometry(radius, 10, 10);
+    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x05f51d, wireframe: wireframe, visible: hitboxesVisible }));
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
 
-// Group creation
 
+// Group creation
 function createClaw(x, y, z, orientation){
     'use strict';
     var claw = new THREE.Object3D();
@@ -131,7 +134,11 @@ function createClaw(x, y, z, orientation){
             break;
         
     }
-    
+
+    buildHitboxSphere(claw, claw.children[1].position.x, 
+                            claw.children[1].position.y, 
+                            claw.children[1].position.z, 0.5);   // Rough estimate for hitbox radius (claw's width)
+
     claws.add(claw);
     claw.position.set(x, y, z);
 
@@ -154,6 +161,9 @@ function createHook(y, z) {
 
     buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
     buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
+
+    const radius = Math.sqrt( 0.5 + 2 );    // radius = sqrt( ( heightHook^2 / 2 ) + ( sideHook^2 / 2 ) );  [heightHook = 2, sideHook = 1];
+    buildHitboxSphere(hook, radius);
 
     createClaws(-1.5, 0, 0x000000);
 
@@ -254,12 +264,12 @@ function createTorusKnot(x, z) { // minimum = 9
     const q = getRandomInteger(3, 6);
 
     var torusKnot = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q); 
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q);
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });  
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-
+    buildHitboxSphere(torusKnot, radius);
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -280,8 +290,11 @@ function createTorus(x, z) {
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
-    torus.add(mesh);
+    const hitboxGeometry = new THREE.SphereGeometry(radius);
+    const hitboxMesh = new THREE.Mesh(hitboxGeometry, new THREE.MeshBasicMaterial({ visible: false }));
 
+    torus.add(mesh);
+    buildHitboxSphere(torus, radius);
     torus.position.x = x;
     torus.position.y = 0.5;
     torus.position.z = z;
@@ -302,6 +315,7 @@ function createDodecahedron(x, z) {
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
+    buildHitboxSphere(dodeca, radius);
     dodeca.position.x = x;
     dodeca.position.y = radius-0.125;                               // Just a safety measure to keep objects from floating
     dodeca.position.z = z;
@@ -319,12 +333,31 @@ function createIcosahedron(x, z) {
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
+    const hitboxGeometry = new THREE.SphereGeometry(radius);
+    const hitboxMesh = new THREE.Mesh(hitboxGeometry, new THREE.MeshBasicMaterial({ visible: false }));
+
     icosa.add(mesh);
+    buildHitboxSphere(icosa, radius);
     icosa.position.x = x;
     icosa.position.y = radius-0.125;                                // Just a safety measure to keep objects from floating
     icosa.position.z = z;
 
     scene.add(icosa);
+}
+
+function createRandomisedBox(x, z) {
+    'use strict';
+
+    const height = getRandomNumber(1, 2);
+    const side = getRandomNumber(1, 2);
+
+    var box = new THREE.Object3D();
+    buildBox(box, x, height/2, z, side, height, side, 0xff0000);
+
+    const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
+    buildHitboxSphere(box, x, height/2, z, radius);
+
+    scene.add(box);
 }
 
 function createRandomisedObjects() {
@@ -356,8 +389,7 @@ function createRandomisedObjects() {
                 createIcosahedron(x_pos, z_pos);
                 break;
             case 4:
-            const height = getRandomNumber(0.5, 2);
-            buildBox(scene, x_pos, height/2, z_pos, 1, height, height, 0xff0000);
+                createRandomisedBox(x_pos, z_pos);
                 break;
         }
     }
@@ -367,7 +399,7 @@ function getPosition(positions) {
     var r, angle, x_pos, z_pos;
     do {
         r = getRandomNumber(MIN_DELTA1, MAX_DELTA1); // Random radius from crane
-        angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
+        angle = getRandomNumber(0, Math.PI * 2);     // Random angle w/ centre in crane's base
         x_pos = r*Math.sin(angle);
         z_pos = r*Math.cos(angle);
     } while (!possiblePosition(positions, x_pos, z_pos));
@@ -428,7 +460,7 @@ function createScene() {
     createCrane(0, 0, 0);
     //createBall(4, 1, 16);
     createCrate(10, 0 ,7);  // To change (or even random)
-    if (randomObjects) { createRandomisedObjects(); }
+    createRandomisedObjects();
 }
 
 
@@ -507,6 +539,10 @@ function updateHUD(key, highlight) {
             keyElement.classList.remove('active'); // Remove highlight class
         }
     }
+}
+
+function collided(hitbox1, hitbox2) {
+
 }
 
 

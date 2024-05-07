@@ -1,12 +1,12 @@
 /**
  * Authors:
- *  - João Fidalgo, ist1103471
- *  - Tomás Cruz, ist1103425
- *  - Rodrigo Friães, ist1104139
+ *  - João Fidalgo,     ist1103471
+ *  - Tomás Cruz,       ist1103425
+ *  - Rodrigo Friães,   ist1104139
  * 
  * NOTES (to delete later):
  * 
- * *Write here anything*
+ * - [KNOWN ISSUE] When calculating collision, for some reason, the squared sum of the radii is 0;
  * 
  */
 
@@ -20,7 +20,7 @@ var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
 
-var kart, topStruct, hook, claws;
+var kart, topStruct, hook, claws, randomisedObjects = [];
 
 var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var hudElement = document.getElementById('hud'); 
@@ -277,6 +277,7 @@ function createTorusKnot(x, z) { // minimum = 9
     torusKnot.rotation.x = Math.PI/2;
 
     scene.add(torusKnot);
+    randomisedObjects.push(torusKnot);
 }
 
 function createTorus(x, z) {
@@ -298,6 +299,7 @@ function createTorus(x, z) {
     torus.rotation.x = Math.PI/2;
 
     scene.add(torus);
+    randomisedObjects.push(torus);
 }
 
 function createDodecahedron(x, z) {
@@ -317,6 +319,7 @@ function createDodecahedron(x, z) {
     dodeca.position.z = z;
 
     scene.add(dodeca);
+    randomisedObjects.push(dodeca);
 }
 
 function createIcosahedron(x, z) {
@@ -336,6 +339,7 @@ function createIcosahedron(x, z) {
     icosa.position.z = z;
 
     scene.add(icosa);
+    randomisedObjects.push(icosa);
 }
 
 function createRandomisedBox(x, z) {
@@ -353,6 +357,7 @@ function createRandomisedBox(x, z) {
     box.position.set(x, height/2, z);
 
     scene.add(box);
+    randomisedObjects.push(box);
 }
 
 function createRandomisedObjects() {
@@ -536,8 +541,30 @@ function updateHUD(key, highlight) {
     }
 }
 
-function collided(hitbox1, hitbox2) {
+function getHitboxRadius(mesh) {
+        return mesh.geometry.parameters.radius;
+}
 
+function collided(hitbox1, hitbox2) {   // In this case, the hitbox1 and hitbox2 are the meshes of the spheres
+    const x1 = hitbox1.position.x;
+    const y1 = hitbox1.position.y;
+    const z1 = hitbox1.position.z;
+    const r1 = getHitboxRadius(hitbox1);
+
+    const x2 = hitbox2. position.x;
+    const y2 = hitbox2.position.y;
+    const z2 = hitbox2.position.z;
+    const r2 = getHitboxRadius(hitbox2);
+
+    const distance_squared = Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2) + Math.pow(z1-z2, 2);
+    const radii_squared = Math.pow(r1+r2, 2);
+
+    //console.log("distance_squared = ", distance_squared, "\radii_squared = ", radii_squared, "\n");
+
+    if (Math.pow(r1+r2, 2) >= distance_squared) { 
+        return true; 
+    }
+    return false;
 }
 
 
@@ -692,6 +719,13 @@ function animate() {
     const deltaTime = clock.getDelta();
 
     requestAnimationFrame(animate);
+
+    for (var i=0; i < randomisedObjects.length; i++) {
+        if (collided(hook.children[2], randomisedObjects[i].children[1])) {
+            // [ADD LOGIC HERE FOR COLLISION]
+            //console.log("Hook has made contact with an object.\n");
+        }
+    }
     
     if (moveBackward && kart.position.z > 4.1) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;

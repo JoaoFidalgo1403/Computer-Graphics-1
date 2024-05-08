@@ -95,25 +95,25 @@ function createClaw(x, y, z, orientation){
     switch(orientation){
         case FORTH:
             buildBox(claw, 0, -0.5, 0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, 0.7, 0.5, 0.75, 0.25, 0x000000);
+            buildBox(claw, 0, -1.3, 0.7, 0.5, 0.75, 0.25, 0xFF00FF);
             claw.children[0].rotation.x = - Math.PI / 4;
             claw.children[1].rotation.x = Math.PI / 12;
             break;
         case BACK:
             buildBox(claw, 0, -0.5, -0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0x000000);
+            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFF00FF);
             claw.children[0].rotation.x = Math.PI / 4;
             claw.children[1].rotation.x = - Math.PI / 12;
             break;
         case RIGHT:
             buildBox(claw, 0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
-            buildBox(claw, 0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x000000);
+            buildBox(claw, 0.7, -1.3, 0, 0.25, 0.75, 0.5, 0xFF00FF);
             claw.children[0].rotation.z = Math.PI / 4;
             claw.children[1].rotation.z = - Math.PI / 12;
             break;
         case LEFT:
             buildBox(claw, -0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
-            buildBox(claw, -0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x000000);
+            buildBox(claw, -0.7, -1.3, 0, 0.25, 0.75, 0.5, 0xFF00FF);
             claw.children[0].rotation.z = - Math.PI / 4;
             claw.children[1].rotation.z =  Math.PI / 12;
             break;

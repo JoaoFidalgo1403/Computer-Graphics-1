@@ -21,8 +21,9 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
+var objectCaught = false;
 
 const clock = new THREE.Clock();
 
@@ -41,6 +42,9 @@ const CLAW_SPEED = 0.6;
 
 const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
+
+const MAX_SLIDE = 20;
+const MIN_SLIDE = 4.1;
 
 const MAX_HEIGHT = -1.6;
 const MIN_HEIGHT = -22.7;
@@ -613,6 +617,7 @@ function onKeyDown(e) {
             break;
         case 53:    // '5' key
             activeCameraNumber = 5;
+            objectCaught = !objectCaught;
             break;
         case 54:    // '6' key
             activeCameraNumber = 6;
@@ -662,6 +667,7 @@ function onKeyDown(e) {
         case 70: // F key
             closeClaws = true;
             break;
+
     }
 
     updateHUD(e.key.toUpperCase(), true, activeCameraNumber); // Update the HUD
@@ -704,31 +710,17 @@ function onResize() {
     }
 }
 
-
-// Function to animate the scene
-function animate() {
-    'use strict';
-    const deltaTime = clock.getDelta();
-
-    requestAnimationFrame(animate);
-
-    for (var i=0; i < randomisedObjects.length; i++) {
-        if (collided(hook.children[2], 
-                    [hook.position.x, hook.position.y, hook.position.z], 
-                    randomisedObjects[i].children[1], 
-                    [randomisedObjects[i].position.x, randomisedObjects[i].position.y, randomisedObjects[i].position.z])) {
-            // [ADD LOGIC HERE FOR COLLISION]
-            //console.log("Hook has made contact with an object.\n");
-        }
+// Functions to animate the scene
+function JibAnimation(deltaTime) {
+    if (rotateLeft) {    // Rotate left [NO LIMIT]
+        topStruct.rotation.y -= ROTATION_SPEED * deltaTime;
     }
-    
-    if (moveBackward && kart.position.z > 4.1) { // Move backward
-        kart.position.z -= MOVEMENT_SPEED * deltaTime;
+    if (rotateRight) {   // Rotate right [NO LIMIT]
+        topStruct.rotation.y += ROTATION_SPEED * deltaTime;
     }
-    if (moveForward && kart.position.z < 20) {  // Move forward
-        kart.position.z += MOVEMENT_SPEED * deltaTime;
-    }
+}
 
+function hookAnimation(deltaTime) {
     if (moveDown && hook.position.y > MIN_HEIGHT) { // Move down
         hook.position.y -= MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
@@ -741,16 +733,18 @@ function animate() {
         hook.children[0].scale.y -= scaleChangeFactor * deltaTime;
         hook.children[0].position.y -= ((14 * scaleChangeFactor) / 2) * deltaTime;
     }
+}
 
-
-    if (rotateLeft) {    // Rotate left [NO LIMIT]
-        topStruct.rotation.y -= ROTATION_SPEED * deltaTime;
+function kartAnimation(deltaTime) {
+    if (moveBackward && kart.position.z > MIN_SLIDE) { // Move backward
+        kart.position.z -= MOVEMENT_SPEED * deltaTime;
     }
-    if (rotateRight) {   // Rotate right [NO LIMIT]
-        topStruct.rotation.y += ROTATION_SPEED * deltaTime;
+    if (moveForward && kart.position.z < MAX_SLIDE) {  // Move forward
+        kart.position.z += MOVEMENT_SPEED * deltaTime;
     }
+}
 
-
+function clawsAnimation(deltaTime) {
     if (openClaws && -claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
         claws.children[0].rotation.x -= CLAW_SPEED * deltaTime;
         claws.children[1].rotation.x += CLAW_SPEED * deltaTime; 
@@ -764,7 +758,110 @@ function animate() {
         claws.children[2].rotation.z -= CLAW_SPEED * deltaTime; 
         claws.children[3].rotation.z += CLAW_SPEED * deltaTime;  
     }
+}
+
+
+//Release object animation
+function releaseObjectClaws(deltaTime) {
+    if (-claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
+        claws.children[0].rotation.x -= CLAW_SPEED * deltaTime;
+        claws.children[1].rotation.x += CLAW_SPEED * deltaTime; 
+        claws.children[2].rotation.z += CLAW_SPEED * deltaTime; 
+        claws.children[3].rotation.z -= CLAW_SPEED * deltaTime; 
+        return false;
+    }
+    return true;
+}
+
+function releaseObjectHook(deltaTime){
+    if(hook.position.y < -10) {
+        hook.position.y += MOVEMENT_SPEED * deltaTime;
+        const scaleChangeFactor = MOVEMENT_SPEED / 14;
+        hook.children[0].scale.y -= scaleChangeFactor * deltaTime;
+        hook.children[0].position.y -= ((14 * scaleChangeFactor) / 2) * deltaTime;
+        return false;
+    } 
+    return true;
+}
+
+function releaseObjectKart(deltaTime) {
+    var kartFinalPos = Math.sqrt(Math.pow(crate.position.x, 2) + 
+        Math.pow(crate.position.z, 2));
+
+    const threshold = 0.05; // Adjust this threshold as needed
+
+    const roundedKartPos = Math.round(kart.position.z * 100) / 100;
+    const roundedFinalPos = Math.round(kartFinalPos * 100) / 100;
+
+    if (Math.abs(roundedKartPos - roundedFinalPos) > threshold) {
+        if (kart.position.z > kartFinalPos) { // Move backward
+            kart.position.z -= MOVEMENT_SPEED * deltaTime;
+        }
+        if (kart.position.z < kartFinalPos) {  // Move forward
+            kart.position.z += MOVEMENT_SPEED * deltaTime;
+        }
+        return false;
+    } 
+    return true;
+}
+
+function releaseObjectJib(deltaTime) {
+    const angleToCrate = Math.atan2(crate.position.x, crate.position.z);
+    const normalizedRotation = (topStruct.rotation.y % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
+
+    let shortestAngle = angleToCrate - normalizedRotation;
+    if (shortestAngle > Math.PI) {
+        shortestAngle -= 2 * Math.PI;
+    } else if (shortestAngle < -Math.PI) {
+        shortestAngle += 2 * Math.PI;
+    }
+
+    let rotationDirection = Math.sign(shortestAngle);
+
+    if (Math.abs(shortestAngle) > ROTATION_SPEED * deltaTime) {
+        topStruct.rotation.y += rotationDirection * ROTATION_SPEED * deltaTime; //Rotate if the rotation is bigger than the rotation step
+        return false;
+    } else {
+        topStruct.rotation.y = angleToCrate; // Keeps the position static if the rotation is too little (lower than the rotation step)
+        return true;
+    }
+}
+
+function releaseObject(deltaTime) {
+    if (objectCaught) {
+        var hookCond = releaseObjectHook(deltaTime);
+        var kartCond = releaseObjectKart(deltaTime);
+        var jibCond = releaseObjectJib(deltaTime);
+
+        if (hookCond && kartCond && jibCond) releaseObjectClaws(deltaTime);
+    }
+}
+
+//Colisions
+function colisions(){
+    for (var i=0; i < randomisedObjects.length; i++) {
+        if (collided(hook.children[2], 
+                    [hook.position.x, hook.position.y, hook.position.z], 
+                    randomisedObjects[i].children[1], 
+                    [randomisedObjects[i].position.x, randomisedObjects[i].position.y, randomisedObjects[i].position.z])) {
+            // [ADD LOGIC HERE FOR COLLISION]
+            //console.log("Hook has made contact with an object.\n");
+        }
+    }
+}
+
+function animate() {
+    'use strict';
+    const deltaTime = clock.getDelta();
+
+    requestAnimationFrame(animate);
     
+    clawsAnimation(deltaTime);
+    hookAnimation(deltaTime);
+    kartAnimation(deltaTime);
+    JibAnimation(deltaTime);
+    colisions();
+    releaseObject(deltaTime);
 
     render();
 }

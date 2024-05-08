@@ -20,11 +20,9 @@ var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
 
-var kart, topStruct, hook, claws;
-
+var kart, topStruct, hook, claws, randomisedObjects = [];
+var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
-
-var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
 
 const clock = new THREE.Clock();
 
@@ -45,7 +43,7 @@ const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
 
 const MAX_HEIGHT = -1.6;
-const MIN_HEIGHT = -23.3;
+const MIN_HEIGHT = -22.7;
 
 const MAX_DELTA1 = 20;
 const MIN_DELTA1 = 4;
@@ -69,6 +67,18 @@ function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom, color) {
     var geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 8);
     var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
     var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    obj.add(mesh);
+}
+
+function buildHitboxSphere(obj, radius, x, y, z) {
+    'use strict';
+    x = (typeof x !== 'undefined') ? x : 0;
+    y = (typeof y !== 'undefined') ? y : 0;
+    z = (typeof z !== 'undefined') ? z : 0;
+
+    geometry = new THREE.SphereGeometry(radius, 10, 10);
+    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x05f51d, wireframe: wireframe, visible: hitboxesVisible }));
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
@@ -105,6 +115,10 @@ function createClaw(x, y, z, orientation){
             break;
         
     }
+
+    buildHitboxSphere(claw, 0.5, claw.children[1].position.x, 
+                            claw.children[1].position.y, 
+                            claw.children[1].position.z);   // Rough estimate for hitbox radius (claw's width)
     
     claws.add(claw);
     claw.position.set(x, y, z);
@@ -128,6 +142,9 @@ function createHook(y, z) {
 
     buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
     buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
+
+    const radius = Math.sqrt( 0.5 + 2 );    // radius = sqrt( ( heightHook^2 / 2 ) + ( sideHook^2 / 2 ) );  [heightHook = 2, sideHook = 1];
+    buildHitboxSphere(hook, radius);
 
     createClaws(-1.5, 0, 0x000000);
 
@@ -222,18 +239,18 @@ function createBall(x, y, z) {
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
-    const tubularSegments = getRandomInteger(20, 30);
     const radius = getRandomNumber(0.5, 1);
     const p = getRandomInteger(2, 5);
-    const q = getRandomInteger(3, 6);
+    var q = 0;
+    do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
 
     var torusKnot = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q); 
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 90, 13, p, q);
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });  
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-
+    buildHitboxSphere(torusKnot, 2*radius);
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -241,21 +258,22 @@ function createTorusKnot(x, z) { // minimum = 9
     torusKnot.rotation.x = Math.PI/2;
 
     scene.add(torusKnot);
+    randomisedObjects.push(torusKnot);
+    console.log("randomisedObjects = ", randomisedObjects);
 }
 
 function createTorus(x, z) {
     'use strict';
 
-    const tubularSegments = getRandomInteger(6, 30);
     const radius = getRandomNumber(0.5, 1);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, tubularSegments); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 90); 
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
-
+    buildHitboxSphere(torus, radius+0.6);
     torus.position.x = x;
     torus.position.y = 0.5;
     torus.position.z = z;
@@ -263,6 +281,7 @@ function createTorus(x, z) {
     torus.rotation.x = Math.PI/2;
 
     scene.add(torus);
+    randomisedObjects.push(torus);
 }
 
 function createDodecahedron(x, z) {
@@ -276,11 +295,13 @@ function createDodecahedron(x, z) {
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
+    buildHitboxSphere(dodeca, radius);
     dodeca.position.x = x;
     dodeca.position.y = radius-0.125;                               // Just a safety measure to keep objects from floating
     dodeca.position.z = z;
 
     scene.add(dodeca);
+    randomisedObjects.push(dodeca);
 }
 
 function createIcosahedron(x, z) {
@@ -294,11 +315,31 @@ function createIcosahedron(x, z) {
     mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
+    buildHitboxSphere(icosa, radius);
     icosa.position.x = x;
     icosa.position.y = radius-0.125;                                // Just a safety measure to keep objects from floating
     icosa.position.z = z;
 
     scene.add(icosa);
+    randomisedObjects.push(icosa);
+}
+
+function createRandomisedBox(x, z) {
+    'use strict';
+
+    const height = getRandomNumber(1, 2);
+    const side = getRandomNumber(1, 2);
+
+    var box = new THREE.Object3D();
+    buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
+
+    const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
+    buildHitboxSphere(box, radius);
+
+    box.position.set(x, height/2, z);
+
+    scene.add(box);
+    randomisedObjects.push(box);
 }
 
 function createRandomisedObjects() {
@@ -314,8 +355,6 @@ function createRandomisedObjects() {
         const x_pos = position_tuple[0];
         const z_pos = position_tuple[1];
 
-        console.log("Positions = ", positions);
-
         switch (getRandomInteger(0,4)) {
             case 0:
                 createTorusKnot(x_pos, z_pos);
@@ -330,8 +369,7 @@ function createRandomisedObjects() {
                 createIcosahedron(x_pos, z_pos);
                 break;
             case 4:
-            const height = getRandomNumber(0.5, 2);
-            buildBox(scene, x_pos, height/2, z_pos, 1, height, height, 0xff0000);
+                createRandomisedBox(x_pos, z_pos);
                 break;
         }
     }
@@ -401,7 +439,7 @@ function createScene() {
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
     createCrate(10, 0 ,7);  // To change (or even random)
-    if (randomObjects) { createRandomisedObjects(); }
+    createRandomisedObjects();
 }
 
 
@@ -487,6 +525,35 @@ function updateHUD(key, highlight, activeCameraN) {
     }
     
 }
+
+
+function getHitboxRadius(mesh) {
+    return mesh.geometry.parameters.radius;
+}
+
+function collided(hitbox1, pos1, hitbox2, pos2) {
+    const x1 = pos1[0];
+    const y1 = pos1[1];
+    const z1 = pos1[2];
+    const r1 = getHitboxRadius(hitbox1);
+
+    const x2 = pos2[0];
+    const y2 = pos2[1];
+    const z2 = pos2[2];
+    const r2 = getHitboxRadius(hitbox2);
+
+    const distance_squared = Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2) + Math.pow(z1-z2, 2);
+    const radii_squared = Math.pow(r1+r2, 2);
+
+    // console.log(" [...] "); [ADD DEBUGGING HERE!!!]
+    console.log("distance_squared = ", distance_squared, ", radii_squared = ", radii_squared, "\n");
+
+    if (Math.pow(r1+r2, 2) >= distance_squared) { 
+        return true; 
+    }
+    return false;
+}
+
 
 function onKeyUp(e) {
     'use strict';
@@ -644,6 +711,16 @@ function animate() {
     const deltaTime = clock.getDelta();
 
     requestAnimationFrame(animate);
+
+    for (var i=0; i < randomisedObjects.length; i++) {
+        if (collided(hook.children[2], 
+                    [hook.position.x, hook.position.y, hook.position.z], 
+                    randomisedObjects[i].children[1], 
+                    [randomisedObjects[i].position.x, randomisedObjects[i].position.y, randomisedObjects[i].position.z])) {
+            // [ADD LOGIC HERE FOR COLLISION]
+            //console.log("Hook has made contact with an object.\n");
+        }
+    }
     
     if (moveBackward && kart.position.z > 4.1) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;

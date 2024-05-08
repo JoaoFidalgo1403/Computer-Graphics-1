@@ -856,12 +856,18 @@ function animate() {
 
     requestAnimationFrame(animate);
     
+    if (objectCaught)
+        releaseObject(deltaTime);
+    else{
     clawsAnimation(deltaTime);
     hookAnimation(deltaTime);
     kartAnimation(deltaTime);
     JibAnimation(deltaTime);
-    colisions();
     releaseObject(deltaTime);
+    }
+
+    colisions();
+
 
     render();
 }

@@ -1,18 +1,18 @@
 /**
  * Authors:
- *  - João Fidalgo,     ist1103471
- *  - Tomás Cruz,       ist1103425
- *  - Rodrigo Friães,   ist1104139
+ *  - João Fidalgo, ist1103471
+ *  - Tomás Cruz, ist1103425
+ *  - Rodrigo Friães, ist1104139
  * 
  * NOTES (to delete later):
  * 
- * - [KNOWN ISSUE] When calculating collision, for some reason, the squared sum of the radii is 0;
+ * *Write here anything*
  * 
  */
 
 import * as THREE from 'three';
 // Define variables
-var activeCamera, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
+var activeCameraNumber, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
 var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
 var ball, crate;
@@ -20,10 +20,11 @@ var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
 
-var kart, topStruct, hook, claws, randomisedObjects = [];
+var kart, topStruct, hook, claws;
 
-var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
-var hudElement = document.getElementById('hud'); 
+var activeCameraNumber;
+
+var randomObjects = true;   // to allow to disable & enable randomised objects [TO DELETE]
 
 const clock = new THREE.Clock();
 
@@ -49,24 +50,6 @@ const MIN_HEIGHT = -23.3;
 const MAX_DELTA1 = 20;
 const MIN_DELTA1 = 4;
 
-const keyActionMap = {
-    'W': 'Move Forward',
-    'S': 'Move Backward',
-    'A': 'Rotate Left',
-    'D': 'Move Down',
-    'E': 'Move Up',
-    'Q': 'Rotate Right',
-    'R': 'Open Claws',
-    'F': 'Close Claws',
-    '1': 'Front Cam',
-    '2': 'Side Cam',
-    '3': 'Top Cam',
-    '4': 'Orthographic Cam',
-    '5': 'Perspective Cam',
-    '6': 'Claws Cam',
-    '7': 'Wireframe',   
-};
-
 // Define cameras array
 var cameras = [];
 
@@ -90,20 +73,8 @@ function buildCylinder(obj, x, y, z, height, radiusTop, radiusBottom, color) {
     obj.add(mesh);
 }
 
-function buildHitboxSphere(obj, radius, x, y, z) {
-
-    x = (typeof x !== 'undefined') ? x : 0;
-    y = (typeof y !== 'undefined') ? y : 0;
-    z = (typeof z !== 'undefined') ? z : 0;
-
-    geometry = new THREE.SphereGeometry(radius, 10, 10);
-    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x05f51d, wireframe: wireframe, visible: hitboxesVisible }));
-    mesh.position.set(x, y, z);
-    obj.add(mesh);
-}
-
-
 // Group creation
+
 function createClaw(x, y, z, orientation){
     'use strict';
     var claw = new THREE.Object3D();
@@ -134,11 +105,7 @@ function createClaw(x, y, z, orientation){
             break;
         
     }
-
-    buildHitboxSphere(claw, 0.5, claw.children[1].position.x, 
-                            claw.children[1].position.y, 
-                            claw.children[1].position.z);   // Rough estimate for hitbox radius (claw's width)
-
+    
     claws.add(claw);
     claw.position.set(x, y, z);
 
@@ -161,9 +128,6 @@ function createHook(y, z) {
 
     buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
     buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
-
-    const radius = Math.sqrt( 0.5 + 2 );    // radius = sqrt( ( heightHook^2 / 2 ) + ( sideHook^2 / 2 ) );  [heightHook = 2, sideHook = 1];
-    buildHitboxSphere(hook, radius);
 
     createClaws(-1.5, 0, 0x000000);
 
@@ -258,18 +222,18 @@ function createBall(x, y, z) {
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
+    const tubularSegments = getRandomInteger(20, 30);
     const radius = getRandomNumber(0.5, 1);
     const p = getRandomInteger(2, 5);
-    var q = 0;
-    do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
+    const q = getRandomInteger(3, 6);
 
     var torusKnot = new THREE.Object3D();
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 90, 13, p, q);
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });  
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, tubularSegments, 13, p, q); 
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-    buildHitboxSphere(torusKnot, 2*radius);
+
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -277,21 +241,21 @@ function createTorusKnot(x, z) { // minimum = 9
     torusKnot.rotation.x = Math.PI/2;
 
     scene.add(torusKnot);
-    randomisedObjects.push(torusKnot);
 }
 
 function createTorus(x, z) {
     'use strict';
 
+    const tubularSegments = getRandomInteger(6, 30);
     const radius = getRandomNumber(0.5, 1);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 90); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, tubularSegments); 
     material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
-    buildHitboxSphere(torus, radius+0.5);
+
     torus.position.x = x;
     torus.position.y = 0.5;
     torus.position.z = z;
@@ -299,7 +263,6 @@ function createTorus(x, z) {
     torus.rotation.x = Math.PI/2;
 
     scene.add(torus);
-    randomisedObjects.push(torus);
 }
 
 function createDodecahedron(x, z) {
@@ -313,13 +276,11 @@ function createDodecahedron(x, z) {
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
-    buildHitboxSphere(dodeca, radius);
     dodeca.position.x = x;
     dodeca.position.y = radius-0.125;                               // Just a safety measure to keep objects from floating
     dodeca.position.z = z;
 
     scene.add(dodeca);
-    randomisedObjects.push(dodeca);
 }
 
 function createIcosahedron(x, z) {
@@ -333,31 +294,11 @@ function createIcosahedron(x, z) {
     mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
-    buildHitboxSphere(icosa, radius);
     icosa.position.x = x;
     icosa.position.y = radius-0.125;                                // Just a safety measure to keep objects from floating
     icosa.position.z = z;
 
     scene.add(icosa);
-    randomisedObjects.push(icosa);
-}
-
-function createRandomisedBox(x, z) {
-    'use strict';
-
-    const height = getRandomNumber(1, 2);
-    const side = getRandomNumber(1, 2);
-
-    var box = new THREE.Object3D();
-    buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
-
-    const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
-    buildHitboxSphere(box, radius);
-
-    box.position.set(x, height/2, z);
-
-    scene.add(box);
-    randomisedObjects.push(box);
 }
 
 function createRandomisedObjects() {
@@ -389,7 +330,8 @@ function createRandomisedObjects() {
                 createIcosahedron(x_pos, z_pos);
                 break;
             case 4:
-                createRandomisedBox(x_pos, z_pos);
+            const height = getRandomNumber(0.5, 2);
+            buildBox(scene, x_pos, height/2, z_pos, 1, height, height, 0xff0000);
                 break;
         }
     }
@@ -399,7 +341,7 @@ function getPosition(positions) {
     var r, angle, x_pos, z_pos;
     do {
         r = getRandomNumber(MIN_DELTA1, MAX_DELTA1); // Random radius from crane
-        angle = getRandomNumber(0, Math.PI * 2);     // Random angle w/ centre in crane's base
+        angle = getRandomNumber(0, Math.PI * 2);  // Random angle w/ centre in crane's base
         x_pos = r*Math.sin(angle);
         z_pos = r*Math.cos(angle);
     } while (!possiblePosition(positions, x_pos, z_pos));
@@ -431,13 +373,14 @@ function createCrate(x, y, z) { // Box without top
     crate = new THREE.Object3D();
     
     // Sides
-    buildBox(crate, 2.375, 2.5, -0.125, 0.25, 5, 4.75, 0x85180c);
-    buildBox(crate, 0.125, 2.5, 2.375, 4.75, 5, 0.25, 0x85180c);
-    buildBox(crate, -2.375, 2.5, 0.125, 0.25, 5, 4.75, 0x85180c);
-    buildBox(crate, -0.125, 2.5, -2.375, 4.75, 5, 0.25, 0x85180c);
+    buildBox(crate, 2.375, 2.5, -0.125, 0.25, 5, 4.75, 0x28910E);
+    buildBox(crate, 0.125, 2.5, 2.375, 4.75, 5, 0.25, 0x28910E);
+    buildBox(crate, -2.375, 2.5, 0.125, 0.25, 5, 4.75, 0x28910E);
+    buildBox(crate, -0.125, 2.5, -2.375, 4.75, 5, 0.25, 0x28910E);
+
 
     // Base
-    buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x85180c);
+   buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x000000);
 
     scene.add(crate);
     crate.position.set(x,y,z);
@@ -451,16 +394,14 @@ function getRandomInteger(min, max) {
     return Math.floor(Math.random() * (max-min + 1) + min);
 }
 
-
 // Function to create scene
 function createScene() {
     'use strict';
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
-    //createBall(4, 1, 16);
     createCrate(10, 0 ,7);  // To change (or even random)
-    createRandomisedObjects();
+    if (randomObjects) { createRandomisedObjects(); }
 }
 
 
@@ -499,15 +440,6 @@ function createCameras() {
     camera6.lookAt(0, -15, 0);
     camera6.rotation.z = Math.PI;
 
-
-    // to remove [TO DELETE]
-    teste = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
-    teste.position.set(0, -10, 17);
-    teste.lookAt(0, 15, 17);
-    teste.zoom *= 1.9;
-    teste.updateProjectionMatrix();
-    ////
-
     cameras.push(camera1);
     cameras.push(camera2);
     cameras.push(camera3);
@@ -515,62 +447,49 @@ function createCameras() {
     cameras.push(camera5);
     cameras.push(camera6);
 
-    cameras.push(teste);    // to remove [TO DELETE]
-
-    activeCamera = camera5; 
+    activeCameraNumber = 5; 
 }
 
-
-function initializeKeyMap() {
-    hudElement.innerHTML = '';
-    for (const [key, action] of Object.entries(keyActionMap)) {
-        hudElement.innerHTML += `<li id="key-${key}">${key}: ${action}</li>`;
-    }
-}
-
-
-function updateHUD(key, highlight) {
+function updateHUD(key, highlight, activeCameraN) {
     'use strict';
     var keyElement = document.getElementById(`key-${key}`);
     if (keyElement) {
+        
         if (highlight) {
-            keyElement.classList.add('active'); // Add highlight class
+            if (key < 7 && key > 0) keyElement.classList.add('activeCamera'); // Add highlight class
+            else if (key == 7) keyElement.classList.add('activeWireframe');
+            else keyElement.classList.add('active');
+        
         } else {
-            keyElement.classList.remove('active'); // Remove highlight class
+            if (key < 7 && key > 0) keyElement.classList.remove('activeCamera'); // Add highlight class
+            else if (key == 7) keyElement.classList.remove('activeWireframe');
+            else keyElement.classList.remove('active');
+            
         }
     }
-}
 
-function getHitboxRadius(mesh) {
-        return mesh.geometry.parameters.radius;
-}
-
-function collided(hitbox1, hitbox2) {   // In this case, the hitbox1 and hitbox2 are the meshes of the spheres
-    const x1 = hitbox1.position.x;
-    const y1 = hitbox1.position.y;
-    const z1 = hitbox1.position.z;
-    const r1 = getHitboxRadius(hitbox1);
-
-    const x2 = hitbox2. position.x;
-    const y2 = hitbox2.position.y;
-    const z2 = hitbox2.position.z;
-    const r2 = getHitboxRadius(hitbox2);
-
-    const distance_squared = Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2) + Math.pow(z1-z2, 2);
-    const radii_squared = Math.pow(r1+r2, 2);
-
-    //console.log("distance_squared = ", distance_squared, "\radii_squared = ", radii_squared, "\n");
-
-    if (Math.pow(r1+r2, 2) >= distance_squared) { 
-        return true; 
+    // Reset all numbers to not active
+    for (let i = 1; i <= 6; i++) {
+        const numberElement = document.getElementById(`key-${i}`);
+        if (numberElement) {
+            numberElement.classList.remove('activeCamera');
+        }
     }
-    return false;
-}
 
+    if (wireframe)
+        document.getElementById(`key-${7}`).classList.add('activeWireframe');
+    else document.getElementById(`key-${7}`).classList.remove('activeWireframe');
+
+    // Highlight the active camera number
+    const activeNumberElement = document.getElementById(`key-${activeCameraN}`);
+    if (activeNumberElement) {
+        activeNumberElement.classList.add('activeCamera');
+    }
+    
+}
 
 function onKeyUp(e) {
     'use strict';
-    updateHUD(e.key.toUpperCase(), false); // Update the HUD
     switch (e.keyCode) {
         //KART movement
         case 87:    // W(w) key
@@ -602,37 +521,37 @@ function onKeyUp(e) {
         case 70: // F key
             closeClaws = false;
             break;
+    }    
+    updateHUD(e.key.toUpperCase(), false, activeCameraNumber); // Update the HUD
 
-    }
 }
 
 
 // Function to handle key presses
 function onKeyDown(e) {
     'use strict';
-    updateHUD(e.key.toUpperCase(), true); // Update the HUD
     switch (e.keyCode) {
         //CAMERA Switching 
         case 49:    // '1' key
-            activeCamera = cameras[0];
+            activeCameraNumber = 1; 
             break;
         case 50:    // '2' key
-            activeCamera = cameras[1];
+            activeCameraNumber = 2;
             break;
         case 51:    // '3' key
-            activeCamera = cameras[2];
+            activeCameraNumber = 3;
             break;
         case 52:    // '4' key
-            activeCamera = cameras[3];
+            activeCameraNumber = 4;
             break;
         case 53:    // '5' key
-            activeCamera = cameras[4];
+            activeCameraNumber = 5;
             break;
         case 54:    // '6' key
-            activeCamera = cameras[5];
+            activeCameraNumber = 6;
             break;
         case 56:    // '8' key - TO REMOVE
-            activeCamera = cameras[6];
+            activeCameraNumber = cameras[6];
             break;
         
         // WIREFRAME activation
@@ -642,6 +561,7 @@ function onKeyDown(e) {
                     node.material.wireframe = !node.material.wireframe;
                 }
             });
+            wireframe = !wireframe;
             break;
 
         //KART movement
@@ -676,6 +596,9 @@ function onKeyDown(e) {
             closeClaws = true;
             break;
     }
+
+    updateHUD(e.key.toUpperCase(), true, activeCameraNumber); // Update the HUD
+
 }
 
 
@@ -687,6 +610,8 @@ function init() {
     document.body.appendChild(renderer.domElement);
     createCameras(); // Create the camera
     createScene(); // Create the scene
+    // Highlight the active camera and wireframe initially
+    updateHUD('', true, activeCameraNumber); // Highlight the active camera
     document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
     document.addEventListener("keyup", onKeyUp);
     window.addEventListener("resize", onResize);
@@ -697,7 +622,7 @@ function init() {
 function render() {
     'use strict';
     renderer.setClearColor(0xFFFFFF);   // Background color set to Light yellow
-    renderer.render(scene, activeCamera);
+    renderer.render(scene, cameras[activeCameraNumber - 1]);
 }
 
 
@@ -707,8 +632,8 @@ function onResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     if (window.innerHeight > 0 && window.innerWidth) {
-        activeCamera.aspect = renderer.getSize().width/renderer.getSize().height;
-        activeCamera.updateProjectionMatrix();
+        cameras[activeCameraNumber - 1].aspect = renderer.getSize().width/renderer.getSize().height;
+        cameras[activeCameraNumber - 1].updateProjectionMatrix();
     }
 }
 
@@ -719,13 +644,6 @@ function animate() {
     const deltaTime = clock.getDelta();
 
     requestAnimationFrame(animate);
-
-    for (var i=0; i < randomisedObjects.length; i++) {
-        if (collided(hook.children[2], randomisedObjects[i].children[1])) {
-            // [ADD LOGIC HERE FOR COLLISION]
-            //console.log("Hook has made contact with an object.\n");
-        }
-    }
     
     if (moveBackward && kart.position.z > 4.1) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;
@@ -777,5 +695,4 @@ function animate() {
 
 // Initialize the scene
 init();
-// initializeKeyMap()
 animate();

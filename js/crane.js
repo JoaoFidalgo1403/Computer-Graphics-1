@@ -236,7 +236,7 @@ function createCrane(x, y, z) {
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
-    const radius = getRandomNumber(0.3, 0.7);
+    const radius = getRandomNumber(0.5, 0.8);
     const p = getRandomInteger(2, 5);
     var q = 0;
     do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
@@ -247,7 +247,7 @@ function createTorusKnot(x, z) { // minimum = 9
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-    buildHitboxSphere(torusKnot, 2.5*radius, 0, 0, 0.5);
+    buildHitboxSphere(torusKnot, 2*radius, 0, 0, 0.3);
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -835,9 +835,8 @@ function moveObject(deltaTime) {
     var jibCond = moveObjectJib(deltaTime);
 
     if (hookCond && kartCond && jibCond) {
-        whynot = true;
         if(moveObjectClaws(deltaTime)){
-            objectCaught = false;
+            whynot = true;
         }    
     }
 
@@ -845,6 +844,8 @@ function moveObject(deltaTime) {
         hook.remove(caughtObject);
         console.log("ready for realease:", readyForRelease);
         readyForRelease = false;
+        objectCaught = false;
+        whynot = false;
     }
 }
 
@@ -867,7 +868,7 @@ function colisions(){
         else if (!boolClaw && !boolHook) {
             blocked = false;
         }
-        else if (!readyForRelease){
+        else if (!readyForRelease && !objectCaught){
             var vec = new THREE.Vector3();
             hook.getWorldPosition(vec);
             object.position.set(0, object.position.y - vec.y , 0);
@@ -875,6 +876,7 @@ function colisions(){
             caughtObject = object;
 
             objectCaught = true;
+            console.log("objectCaught:", objectCaught);
             break;
         } 
     }
@@ -896,7 +898,7 @@ function animate() {
     if (objectCaught) {
         moveObject(deltaTime);
         blocked = false;
-        if (whynot) colisions(deltaTime);
+        colisions(deltaTime);
     } else {
     clawsAnimation(deltaTime);
     hookAnimation(deltaTime);

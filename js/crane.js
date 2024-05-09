@@ -867,58 +867,6 @@ function colisions(){
     }
 }
 
-/*
-        for(var j=0; j > 4; j++) {
-            boolClaw = collided(hook.children[3].children[j].children[2], randomisedObjects[i].children[1]);
-
-            if(boolClaw && !boolHook) {
-                blocked = j+1;
-                break;
-            } else if (!boolClaw && boolHook) {
-                blocked = BLOCKED_DOWN;
-                break;
-            }
-            else if (!boolClaw && !boolHook) {
-                blocked = false;
-            }
-            else {
-                objectCaught = true;
-                break;
-            }
-        }
-        */
-/*
-function colisions() {
-    const len = randomisedObjects.length;
-
-    for (var i = 0; i < len; i++) {
-        const object = randomisedObjects[i];
-        const hookClaw = hook.children[3].children[0].children[2];
-
-        // Check collision between hook and object
-        const collidedWithHook = collided(hook.children[2], object.children[1]);
-        const collidedWithClaw = collided(hookClaw, object.children[1]);
-
-        // Check if the object is already grabbed by another hook
-        const isAlreadyGrabbed = object.parent !== hook;
-
-        if (collidedWithHook && !collidedWithClaw && !isAlreadyGrabbed) {
-            // Move the object to the hook's position
-            object.position.copy(hook.position);
-
-            // Make the object a child of the hook
-            hook.add(object);
-
-            // Set a flag to indicate that an object is caught
-            objectCaught = true;
-
-            // Exit the loop since an object is caught
-            break;
-        }
-    }
-}*/
-
-
 function animate() {
     'use strict';
     const deltaTime = clock.getDelta();

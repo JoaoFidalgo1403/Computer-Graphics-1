@@ -835,8 +835,10 @@ function moveObject(deltaTime) {
     var jibCond = moveObjectJib(deltaTime);
 
     if (hookCond && kartCond && jibCond) {
+        whynot = true;
         if(moveObjectClaws(deltaTime)){
-            whynot = true;
+            objectCaught = false;
+            whynot = false;
         }    
     }
 
@@ -844,8 +846,6 @@ function moveObject(deltaTime) {
         hook.remove(caughtObject);
         console.log("ready for realease:", readyForRelease);
         readyForRelease = false;
-        objectCaught = false;
-        whynot = false;
     }
 }
 

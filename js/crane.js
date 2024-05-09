@@ -21,10 +21,11 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
 var objectCaught = false;
 var blocked = false;
+var readyForRelease = false;
 
 const clock = new THREE.Clock();
 
@@ -108,7 +109,7 @@ function createClaw(x, y, z, orientation){
             break;
         case BACK:
             buildBox(claw, 0, -0.5, -0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFFFF00);
+            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFF00FF);
             claw.children[0].rotation.x = Math.PI / 4;
             claw.children[1].rotation.x = - Math.PI / 12;
             break;
@@ -127,7 +128,7 @@ function createClaw(x, y, z, orientation){
         
     }
 
-    buildHitboxSphere(claw, 0.5, claw.children[1].position.x, 
+    buildHitboxSphere(claw, 0.2, claw.children[1].position.x, 
                             claw.children[1].position.y, 
                             claw.children[1].position.z);   // Rough estimate for hitbox radius (claw's width)
     
@@ -232,24 +233,10 @@ function createCrane(x, y, z) {
 }
 
 // RANDOM Objects
-function createBall(x, y, z) {
-    'use strict';
-
-    ball = new THREE.Object3D();
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });
-    geometry = new THREE.SphereGeometry(1, 10, 10);
-    mesh = new THREE.Mesh(geometry, material);
-
-    ball.add(mesh);
-    ball.position.set(x, y, z);
-
-    scene.add(ball);
-}
-
 function createTorusKnot(x, z) { // minimum = 9
     'use strict';
 
-    const radius = getRandomNumber(0.5, 1);
+    const radius = getRandomNumber(0.3, 0.7);
     const p = getRandomInteger(2, 5);
     var q = 0;
     do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
@@ -260,7 +247,7 @@ function createTorusKnot(x, z) { // minimum = 9
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
-    buildHitboxSphere(torusKnot, 2*radius);
+    buildHitboxSphere(torusKnot, 2.5*radius, 0, 0, 0.5);
     torusKnot.position.x = x;
     torusKnot.position.y = 0.5;
     torusKnot.position.z = z;
@@ -275,7 +262,7 @@ function createTorusKnot(x, z) { // minimum = 9
 function createTorus(x, z) {
     'use strict';
 
-    const radius = getRandomNumber(0.5, 1);
+    const radius = getRandomNumber(0.3, 0.7);
 
     var torus = new THREE.Object3D();
     geometry = new THREE.TorusGeometry(radius, 0.5, 16, 90); 
@@ -283,7 +270,7 @@ function createTorus(x, z) {
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
-    buildHitboxSphere(torus, radius+0.6);
+    buildHitboxSphere(torus, radius+0.5);
     torus.position.x = x;
     torus.position.y = 0.5;
     torus.position.z = z;
@@ -297,7 +284,7 @@ function createTorus(x, z) {
 function createDodecahedron(x, z) {
     'use strict';
 
-    const radius = getRandomNumber(0.75, 1.5);
+    const radius = getRandomNumber(0.7, 1.2);
 
     var dodeca = new THREE.Object3D();
     geometry = new THREE.DodecahedronGeometry(radius, 0);
@@ -317,7 +304,7 @@ function createDodecahedron(x, z) {
 function createIcosahedron(x, z) {
     'use strict';
 
-    const radius = getRandomNumber(0.75, 1.5);
+    const radius = getRandomNumber(0.7, 1.2);
 
     var icosa = new THREE.Object3D();
     geometry = new THREE.IcosahedronGeometry(radius, 0); 
@@ -344,7 +331,7 @@ function createRandomisedBox(x, z) {
     buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
 
     const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
-    buildHitboxSphere(box, radius);
+    buildHitboxSphere(box, height/2);
 
     box.position.set(x, height/2, z);
 
@@ -630,6 +617,8 @@ function onKeyDown(e) {
             break;
         case 54:    // '6' key
             activeCameraNumber = 6;
+            
+            hitboxesVisible = !hitboxesVisible;
             break;
         case 56:    // '8' key - TO REMOVE
             activeCameraNumber = cameras[6];
@@ -844,6 +833,7 @@ function releaseObject(deltaTime) {
     if (hookCond && kartCond && jibCond) 
         if(releaseObjectClaws(deltaTime))
             objectCaught = false;
+            readyForRelease = true
 }
 
 //Colisions
@@ -852,8 +842,31 @@ function colisions(){
     const len = randomisedObjects.length;
 
     for (var i=0; i < len; i++) {
-        boolHook = collided(hook.children[2], randomisedObjects[i].children[1]);
-        boolClaw = collided(hook.children[3].children[0].children[2], randomisedObjects[i].children[1]);
+        const object = randomisedObjects[i];
+        const hookClaw = hook.children[3].children[0].children[2];
+
+        boolHook = collided(hook.children[2], object.children[1]);
+        boolClaw = collided(hookClaw, object.children[1]);
+        const isAlreadyGrabbed = randomisedObjects[i].children[1].parent !== hook;
+        if ((boolClaw && !boolHook) || (!boolClaw && boolHook)) {
+            blocked = true;
+            break;
+        }
+        else if (!boolClaw && !boolHook) {
+            blocked = false;
+        }
+        else if (!readyForRelease){
+            var vec = new THREE.Vector3();
+            hook.getWorldPosition(vec);
+            object.position.set(0, -vec.y + object.position.y, 0);
+            hook.add(object);
+            // Log positions for debugging
+            objectCaught = true;
+            break;
+        }
+    }
+}
+
 /*
         for(var j=0; j > 4; j++) {
             boolClaw = collided(hook.children[3].children[j].children[2], randomisedObjects[i].children[1]);
@@ -874,18 +887,37 @@ function colisions(){
             }
         }
         */
-        if ((boolClaw && !boolHook) || (!boolClaw && boolHook)) {
-            blocked = true;
+/*
+function colisions() {
+    const len = randomisedObjects.length;
+
+    for (var i = 0; i < len; i++) {
+        const object = randomisedObjects[i];
+        const hookClaw = hook.children[3].children[0].children[2];
+
+        // Check collision between hook and object
+        const collidedWithHook = collided(hook.children[2], object.children[1]);
+        const collidedWithClaw = collided(hookClaw, object.children[1]);
+
+        // Check if the object is already grabbed by another hook
+        const isAlreadyGrabbed = object.parent !== hook;
+
+        if (collidedWithHook && !collidedWithClaw && !isAlreadyGrabbed) {
+            // Move the object to the hook's position
+            object.position.copy(hook.position);
+
+            // Make the object a child of the hook
+            hook.add(object);
+
+            // Set a flag to indicate that an object is caught
+            objectCaught = true;
+
+            // Exit the loop since an object is caught
             break;
         }
-        else if (!boolClaw && !boolHook) {
-            blocked = false;
-        }
-        else {
-            objectCaught = true;
-        }
     }
-}
+}*/
+
 
 function animate() {
     'use strict';

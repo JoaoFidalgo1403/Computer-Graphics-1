@@ -831,9 +831,10 @@ function releaseObject(deltaTime) {
     var jibCond = releaseObjectJib(deltaTime);
 
     if (hookCond && kartCond && jibCond) 
-        if(releaseObjectClaws(deltaTime))
+        if(releaseObjectClaws(deltaTime)){
             objectCaught = false;
-            readyForRelease = true
+            readyForRelease = true;
+        }    
 }
 
 //Colisions

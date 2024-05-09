@@ -15,17 +15,17 @@ import * as THREE from 'three';
 var activeCameraNumber, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
 var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
-var ball, crate;
+var crate;
 var wireframe = true;
 var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
-var objectCaught = false;
+var objectCaught = false, caughtObject;
 var blocked = false;
-var readyForRelease = false;
+var readyForRelease = false, whynot = false;
 
 const clock = new THREE.Clock();
 
@@ -331,7 +331,7 @@ function createRandomisedBox(x, z) {
     buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
 
     const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
-    buildHitboxSphere(box, height/2);
+    buildHitboxSphere(box, Math.max(height, side)/2);
 
     box.position.set(x, height/2, z);
 
@@ -760,7 +760,7 @@ function clawsAnimation(deltaTime) {
 
 
 //Release object animation
-function releaseObjectClaws(deltaTime) {
+function moveObjectClaws(deltaTime) {
     if (-claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
         claws.children[0].rotation.x -= CLAW_SPEED * deltaTime;
         claws.children[1].rotation.x += CLAW_SPEED * deltaTime; 
@@ -771,7 +771,7 @@ function releaseObjectClaws(deltaTime) {
     return true;
 }
 
-function releaseObjectHook(deltaTime){
+function moveObjectHook(deltaTime){
     if(hook.position.y < -10) {
         hook.position.y += MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
@@ -782,7 +782,7 @@ function releaseObjectHook(deltaTime){
     return true;
 }
 
-function releaseObjectKart(deltaTime) {
+function moveObjectKart(deltaTime) {
     var kartFinalPos = Math.sqrt(Math.pow(crate.position.x, 2) + 
         Math.pow(crate.position.z, 2));
 
@@ -803,7 +803,7 @@ function releaseObjectKart(deltaTime) {
     return true;
 }
 
-function releaseObjectJib(deltaTime) {
+function moveObjectJib(deltaTime) {
     const angleToCrate = Math.atan2(crate.position.x, crate.position.z);
     const normalizedRotation = (topStruct.rotation.y % (2 * Math.PI) + (2 * Math.PI)) % (2 * Math.PI);
 
@@ -826,15 +826,26 @@ function releaseObjectJib(deltaTime) {
 }
 
 function releaseObject(deltaTime) {
-    var hookCond = releaseObjectHook(deltaTime);
-    var kartCond = releaseObjectKart(deltaTime);
-    var jibCond = releaseObjectJib(deltaTime);
 
-    if (hookCond && kartCond && jibCond) 
-        if(releaseObjectClaws(deltaTime)){
+}
+
+function moveObject(deltaTime) {
+    var hookCond = moveObjectHook(deltaTime);
+    var kartCond = moveObjectKart(deltaTime);
+    var jibCond = moveObjectJib(deltaTime);
+
+    if (hookCond && kartCond && jibCond) {
+        whynot = true;
+        if(moveObjectClaws(deltaTime)){
             objectCaught = false;
-            readyForRelease = true;
         }    
+    }
+
+    if (readyForRelease) {
+        hook.remove(caughtObject);
+        console.log("ready for realease:", readyForRelease);
+        readyForRelease = false;
+    }
 }
 
 //Colisions
@@ -843,12 +854,12 @@ function colisions(){
     const len = randomisedObjects.length;
 
     for (var i=0; i < len; i++) {
-        const object = randomisedObjects[i];
-        const hookClaw = hook.children[3].children[0].children[2];
+        var object = randomisedObjects[i];
+        var hookClaw = hook.children[3].children[0].children[2];
 
         boolHook = collided(hook.children[2], object.children[1]);
         boolClaw = collided(hookClaw, object.children[1]);
-        const isAlreadyGrabbed = randomisedObjects[i].children[1].parent !== hook;
+
         if ((boolClaw && !boolHook) || (!boolClaw && boolHook)) {
             blocked = true;
             break;
@@ -859,12 +870,20 @@ function colisions(){
         else if (!readyForRelease){
             var vec = new THREE.Vector3();
             hook.getWorldPosition(vec);
-            object.position.set(0, -vec.y + object.position.y, 0);
+            object.position.set(0, object.position.y - vec.y , 0);
             hook.add(object);
-            // Log positions for debugging
+            caughtObject = object;
+
             objectCaught = true;
             break;
-        }
+        } 
+    }
+
+    if (whynot){
+        boolHook = collided(hook.children[2], caughtObject.children[1]);
+        boolClaw = collided(hookClaw, caughtObject.children[1]);
+        if (!boolClaw && boolHook) 
+            readyForRelease = true;
     }
 }
 
@@ -875,14 +894,15 @@ function animate() {
     requestAnimationFrame(animate);
     
     if (objectCaught) {
-        releaseObject(deltaTime);
+        moveObject(deltaTime);
         blocked = false;
+        if (whynot) colisions(deltaTime);
     } else {
     clawsAnimation(deltaTime);
     hookAnimation(deltaTime);
     kartAnimation(deltaTime);
     JibAnimation(deltaTime);
-    colisions();
+    colisions(deltaTime);
     }
 
 

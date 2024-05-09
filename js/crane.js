@@ -21,9 +21,10 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
 var objectCaught = false;
+var blocked = false;
 
 const clock = new THREE.Clock();
 
@@ -31,6 +32,12 @@ const FORTH = 1;
 const BACK = 2;
 const RIGHT = 3;
 const LEFT = 4;
+
+const BLOCKED_FRONT = 1;
+const BLOCKED_BACK = 2;
+const BLOCKED_LEFT = 4;
+const BLOCKED_RIGHT = 3;
+const BLOCKED_DOWN = 5;
 
 
 const ROTATION_SPEED = 0.35;
@@ -101,7 +108,7 @@ function createClaw(x, y, z, orientation){
             break;
         case BACK:
             buildBox(claw, 0, -0.5, -0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFF00FF);
+            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFFFF00);
             claw.children[0].rotation.x = Math.PI / 4;
             claw.children[1].rotation.x = - Math.PI / 12;
             break;
@@ -147,8 +154,7 @@ function createHook(y, z) {
     buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
     buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
 
-    const radius = Math.sqrt( 0.5 + 2 );    // radius = sqrt( ( heightHook^2 / 2 ) + ( sideHook^2 / 2 ) );  [heightHook = 2, sideHook = 1];
-    buildHitboxSphere(hook, radius);
+    buildHitboxSphere(hook, 0.5, 0, -1, 0);
 
     createClaws(-1.5, 0, 0x000000);
 
@@ -535,24 +541,27 @@ function getHitboxRadius(mesh) {
     return mesh.geometry.parameters.radius;
 }
 
-function collided(hitbox1, pos1, hitbox2, pos2) {
-    const x1 = pos1[0];
-    const y1 = pos1[1];
-    const z1 = pos1[2];
+function collided(hitbox1, hitbox2) {
+
+    const global_pos1 = new THREE.Vector3();
+    const global_pos2 = new THREE.Vector3();
+
+    hitbox1.getWorldPosition(global_pos1);
+    hitbox2.getWorldPosition(global_pos2);
+    const x1 = global_pos1.x;
+    const y1 = global_pos1.y;
+    const z1 = global_pos1.z;
     const r1 = getHitboxRadius(hitbox1);
 
-    const x2 = pos2[0];
-    const y2 = pos2[1];
-    const z2 = pos2[2];
+    const x2 = global_pos2.x;
+    const y2 = global_pos2.y;
+    const z2 = global_pos2.z;
     const r2 = getHitboxRadius(hitbox2);
 
     const distance_squared = Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2) + Math.pow(z1-z2, 2);
     const radii_squared = Math.pow(r1+r2, 2);
 
-    // console.log(" [...] "); [ADD DEBUGGING HERE!!!]
-    console.log("distance_squared = ", distance_squared, ", radii_squared = ", radii_squared, "\n");
-
-    if (Math.pow(r1+r2, 2) >= distance_squared) { 
+    if (radii_squared >= distance_squared) { 
         return true; 
     }
     return false;
@@ -712,16 +721,16 @@ function onResize() {
 
 // Functions to animate the scene
 function JibAnimation(deltaTime) {
-    if (rotateLeft) {    // Rotate left [NO LIMIT]
+    if (rotateLeft) { //blocked != BLOCKED_LEFT) {    // Rotate left [NO LIMIT]
         topStruct.rotation.y -= ROTATION_SPEED * deltaTime;
     }
-    if (rotateRight) {   // Rotate right [NO LIMIT]
+    if (rotateRight) { //blocked != BLOCKED_RIGHT) {   // Rotate right [NO LIMIT]
         topStruct.rotation.y += ROTATION_SPEED * deltaTime;
     }
 }
 
 function hookAnimation(deltaTime) {
-    if (moveDown && hook.position.y > MIN_HEIGHT) { // Move down
+    if (moveDown && hook.position.y > MIN_HEIGHT && !blocked) { //blocked != BLOCKED_DOWN) { // Move down
         hook.position.y -= MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
         hook.children[0].scale.y += scaleChangeFactor * deltaTime;
@@ -736,10 +745,10 @@ function hookAnimation(deltaTime) {
 }
 
 function kartAnimation(deltaTime) {
-    if (moveBackward && kart.position.z > MIN_SLIDE) { // Move backward
+    if (moveBackward && kart.position.z > MIN_SLIDE) { //blocked != BLOCKED_BACK) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;
     }
-    if (moveForward && kart.position.z < MAX_SLIDE) {  // Move forward
+    if (moveForward && kart.position.z < MAX_SLIDE) { //blocked != BLOCKED_FRONT) {  // Move forward
         kart.position.z += MOVEMENT_SPEED * deltaTime;
     }
 }
@@ -828,24 +837,52 @@ function releaseObjectJib(deltaTime) {
 }
 
 function releaseObject(deltaTime) {
-    if (objectCaught) {
-        var hookCond = releaseObjectHook(deltaTime);
-        var kartCond = releaseObjectKart(deltaTime);
-        var jibCond = releaseObjectJib(deltaTime);
+    var hookCond = releaseObjectHook(deltaTime);
+    var kartCond = releaseObjectKart(deltaTime);
+    var jibCond = releaseObjectJib(deltaTime);
 
-        if (hookCond && kartCond && jibCond) releaseObjectClaws(deltaTime);
-    }
+    if (hookCond && kartCond && jibCond) 
+        if(releaseObjectClaws(deltaTime))
+            objectCaught = false;
 }
 
 //Colisions
 function colisions(){
-    for (var i=0; i < randomisedObjects.length; i++) {
-        if (collided(hook.children[2], 
-                    [hook.position.x, hook.position.y, hook.position.z], 
-                    randomisedObjects[i].children[1], 
-                    [randomisedObjects[i].position.x, randomisedObjects[i].position.y, randomisedObjects[i].position.z])) {
-            // [ADD LOGIC HERE FOR COLLISION]
-            //console.log("Hook has made contact with an object.\n");
+    var boolHook, boolClaw;
+    const len = randomisedObjects.length;
+
+    for (var i=0; i < len; i++) {
+        boolHook = collided(hook.children[2], randomisedObjects[i].children[1]);
+        boolClaw = collided(hook.children[3].children[0].children[2], randomisedObjects[i].children[1]);
+/*
+        for(var j=0; j > 4; j++) {
+            boolClaw = collided(hook.children[3].children[j].children[2], randomisedObjects[i].children[1]);
+
+            if(boolClaw && !boolHook) {
+                blocked = j+1;
+                break;
+            } else if (!boolClaw && boolHook) {
+                blocked = BLOCKED_DOWN;
+                break;
+            }
+            else if (!boolClaw && !boolHook) {
+                blocked = false;
+            }
+            else {
+                objectCaught = true;
+                break;
+            }
+        }
+        */
+        if ((boolClaw && !boolHook) || (!boolClaw && boolHook)) {
+            blocked = true;
+            break;
+        }
+        else if (!boolClaw && !boolHook) {
+            blocked = false;
+        }
+        else {
+            objectCaught = true;
         }
     }
 }
@@ -856,17 +893,16 @@ function animate() {
 
     requestAnimationFrame(animate);
     
-    if (objectCaught)
+    if (objectCaught) {
         releaseObject(deltaTime);
-    else{
+        blocked = false;
+    } else {
     clawsAnimation(deltaTime);
     hookAnimation(deltaTime);
     kartAnimation(deltaTime);
     JibAnimation(deltaTime);
-    releaseObject(deltaTime);
-    }
-
     colisions();
+    }
 
 
     render();

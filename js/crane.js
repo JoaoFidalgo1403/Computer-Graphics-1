@@ -21,11 +21,12 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
 var objectCaught = false, caughtObject;
 var blocked = false;
-var readyForRelease = false, whynot = false;
+var readyForRelease = false, whynot = false, release = false;
+
 
 const clock = new THREE.Clock();
 
@@ -44,6 +45,7 @@ const BLOCKED_DOWN = 5;
 const ROTATION_SPEED = 0.35;
 const MOVEMENT_SPEED = 5;
 const CLAW_SPEED = 0.6;
+var fallingSpeed = MOVEMENT_SPEED;
 
 //const MAX_ROTATION = Math.PI / 2;
 //const MIN_ROTATION = -Math.PI / 2;
@@ -248,8 +250,9 @@ function createTorusKnot(x, z) { // minimum = 9
 
     torusKnot.add(mesh);
     buildHitboxSphere(torusKnot, 2*radius, 0, 0, 0.3);
+    torusKnot.height = 0.5;
     torusKnot.position.x = x;
-    torusKnot.position.y = 0.5;
+    torusKnot.position.y = torusKnot.height;
     torusKnot.position.z = z;
 
     torusKnot.rotation.x = Math.PI/2;
@@ -271,8 +274,9 @@ function createTorus(x, z) {
 
     torus.add(mesh);
     buildHitboxSphere(torus, radius+0.5);
+    torus.height = 0.5; 
     torus.position.x = x;
-    torus.position.y = 0.5;
+    torus.position.y = torus.height;
     torus.position.z = z;
 
     torus.rotation.x = Math.PI/2;
@@ -293,9 +297,11 @@ function createDodecahedron(x, z) {
 
     dodeca.add(mesh);
     buildHitboxSphere(dodeca, radius);
+    dodeca.height = radius-0.125; 
     dodeca.position.x = x;
-    dodeca.position.y = radius-0.125;                               // Just a safety measure to keep objects from floating
+    dodeca.position.y = dodeca.height;                               // Just a safety measure to keep objects from floating
     dodeca.position.z = z;
+
 
     scene.add(dodeca);
     randomisedObjects.push(dodeca);
@@ -313,8 +319,9 @@ function createIcosahedron(x, z) {
 
     icosa.add(mesh);
     buildHitboxSphere(icosa, radius);
+    icosa.height = radius-0.125;
     icosa.position.x = x;
-    icosa.position.y = radius-0.125;                                // Just a safety measure to keep objects from floating
+    icosa.position.y = icosa.height;                                // Just a safety measure to keep objects from floating
     icosa.position.z = z;
 
     scene.add(icosa);
@@ -330,9 +337,9 @@ function createRandomisedBox(x, z) {
     var box = new THREE.Object3D();
     buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
 
-    const radius = Math.sqrt( ( Math.pow(side, 2)/2 ) + ( Math.pow(height, 2)/2 ) );
     buildHitboxSphere(box, Math.max(height, side)/2);
 
+    box.height = height/2;
     box.position.set(x, height/2, z);
 
     scene.add(box);
@@ -352,7 +359,7 @@ function createRandomisedObjects() {
         const x_pos = position_tuple[0];
         const z_pos = position_tuple[1];
 
-        switch (getRandomInteger(0,4)) {
+        switch (getRandomInteger(0, 4)) {
             case 0:
                 createTorusKnot(x_pos, z_pos);
                 break;
@@ -613,7 +620,6 @@ function onKeyDown(e) {
             break;
         case 53:    // '5' key
             activeCameraNumber = 5;
-            objectCaught = !objectCaught;
             break;
         case 54:    // '6' key
             activeCameraNumber = 6;
@@ -826,6 +832,16 @@ function moveObjectJib(deltaTime) {
 }
 
 function releaseObject(deltaTime) {
+    var minY = caughtObject.height + 0.25; 
+    if(caughtObject.position.y > minY) {
+        if (caughtObject.position.y - fallingSpeed * deltaTime <= minY) 
+            caughtObject.position.y -= caughtObject.position.y - minY;         
+        else caughtObject.position.y -= fallingSpeed * deltaTime;
+        fallingSpeed *= 1.1;
+    } else {
+        release = false;
+        fallingSpeed = MOVEMENT_SPEED;
+    }
 
 }
 
@@ -843,10 +859,25 @@ function moveObject(deltaTime) {
     }
 
     if (readyForRelease) {
+        var worldRotation = new THREE.Quaternion();
+        caughtObject.getWorldQuaternion(worldRotation);
+        // Remove the object from the hook
         hook.remove(caughtObject);
-        console.log("ready for realease:", readyForRelease);
+
+        var worldPosition = new THREE.Vector3();
+        hook.getWorldPosition(worldPosition);
+
+        caughtObject.position.copy(worldPosition);
+        caughtObject.position.y -= 1 + caughtObject.children[1].geometry.parameters.radius + 0.5; // hook_box_height/2 + object_hb_radius + hook_top_hb_radius  
+
+        scene.add(caughtObject);
+        caughtObject.setRotationFromQuaternion(worldRotation);
+        
         readyForRelease = false;
+        release = true;
     }
+
+    if (release) releaseObject(deltaTime);
 }
 
 //Colisions
@@ -868,15 +899,15 @@ function colisions(){
         else if (!boolClaw && !boolHook) {
             blocked = false;
         }
-        else if (!readyForRelease && !objectCaught){
-            var vec = new THREE.Vector3();
-            hook.getWorldPosition(vec);
-            object.position.set(0, object.position.y - vec.y , 0);
-            hook.add(object);
+        else if (!readyForRelease && !objectCaught) {
             caughtObject = object;
 
+            var vec = new THREE.Vector3();
+            hook.getWorldPosition(vec);
+            object.position.set(0, object.position.y - vec.y, 0);
+        
+            hook.add(object);
             objectCaught = true;
-            console.log("objectCaught:", objectCaught);
             break;
         } 
     }

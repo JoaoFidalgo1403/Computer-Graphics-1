@@ -11,34 +11,46 @@
  */
 
 import * as THREE from 'three';
-// Define variables
-var activeCameraNumber, camera1, camera2, camera3, camera4, camera5, camera6, teste, scene, renderer;
-var geometry, material, mesh;
-var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
-var crate;
-var wireframe = false;
-var openClaws = false;
-var closeClaws = false;
+var scene, renderer;
 
-var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
-var activeCameraNumber;
-var objectCaught = false, caughtObject;
+// Cameras
+var activeCameraNumber, camera1, camera2, camera3, camera4, camera5, camera6;
+
+// Global Objects
+var kart, topStruct, hook, claws;
+var crate, randomisedObjects = [];
+var caughtObject;
+
+// Boolen Variables
+
+// Crane movement
+var moveForward = false, moveBackward = false;
+var rotateLeft = false, rotateRight = false;
+var moveUp = false, moveDown = false;
+var openClaws = false, closeClaws = false;
 var blocked = false;
-var readyForRelease = false, whynot = false, release = false;
 
+// Objects visibility
+var wireframe = false;
+var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
 
+// Handlers for catching an object
+var objectCaught = false, readyForRelease = false, release = false;
+
+// Graphic's clock 
 const clock = new THREE.Clock();
 
+// Claw orientation
 const FORTH = 1;
 const BACK = 2;
 const RIGHT = 3;
 const LEFT = 4;
 
+// Movement constant variables
 const ROTATION_SPEED = 0.35;
 const MOVEMENT_SPEED = 5;
 const CLAW_SPEED = 0.6;
-var fallingSpeed = MOVEMENT_SPEED;
+var fallingSpeed = MOVEMENT_SPEED; // exception, falling speed has acceleration
 
 const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
@@ -56,12 +68,12 @@ const MIN_DELTA1 = 4;
 var cameras = [];
 
 
-// Builder functions
+// Builder functions ----------------------------------------------------------------------------------------------
 function buildBox(obj, x, y, z, width, height, length, color) {
     'use strict'
-    geometry = new THREE.BoxGeometry(width, height, length);
+    var geometry = new THREE.BoxGeometry(width, height, length);
     var material = new THREE.MeshBasicMaterial({ color: color, wireframe: wireframe })
-    mesh = new THREE.Mesh(geometry, material);
+    var mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
@@ -81,14 +93,14 @@ function buildHitboxSphere(obj, radius, x, y, z) {
     y = (typeof y !== 'undefined') ? y : 0;
     z = (typeof z !== 'undefined') ? z : 0;
 
-    geometry = new THREE.SphereGeometry(radius, 10, 10);
-    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xFF0000, wireframe: wireframe, visible: hitboxesVisible }));
+    var geometry = new THREE.SphereGeometry(radius, 10, 10);
+    var mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xFF0000, wireframe: wireframe, visible: hitboxesVisible }));
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
 
-// Group creation
 
+// CRANE creation functions ----------------------------------------------------------------------------------
 function createClaw(x, y, z, orientation){
     'use strict';
     var claw = new THREE.Object3D();
@@ -143,9 +155,10 @@ function createClaws(y, z) {
 function createHook(y, z) {
     'use strict';
     hook = new THREE.Object3D();
-
-    buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
-    buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             // Hook
+    // Cable     (The height of the cable is important for the lifting of the hook -> 14)
+    buildCylinder(hook, 0, 8, 0, 14, 0.1, 0.1, 0x000000);  
+    // Hook  
+    buildBox(hook, 0, 0, 0, 1, 2, 1, 0x28910E);             
 
     buildHitboxSphere(hook, 0.5, 0, -1, 0);
 
@@ -219,12 +232,40 @@ function createTopStruct(x, y, z) {
     topStruct.position.set(x, y, z);
 }
 
+//CRANE
 function createCrane(x, y, z) {
     createBaseStruct(x, y + 1, z);
     createTopStruct(x, y + 22.5, z);
 }
 
-// RANDOM Objects
+//CRATE
+function createCrate(x, y, z) { // Box without top
+    'use strict';
+    crate = new THREE.Object3D();
+    
+    // Sides
+    buildBox(crate, 2.375, 2.5, -0.125, 0.25, 5, 4.75, 0x28910E);
+    buildBox(crate, 0.125, 2.5, 2.375, 4.75, 5, 0.25, 0x28910E);
+    buildBox(crate, -2.375, 2.5, 0.125, 0.25, 5, 4.75, 0x28910E);
+    buildBox(crate, -0.125, 2.5, -2.375, 4.75, 5, 0.25, 0x28910E);
+
+
+    // Base
+   buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x000000);
+
+    scene.add(crate);
+    crate.position.set(x,y,z);
+}
+
+//GROUND
+function createGround() {
+    var ground = new THREE.Mesh(new THREE.BoxGeometry(50, 50, 3).rotateX(-Math.PI * 0.5), new THREE.MeshBasicMaterial({color: new THREE.Color(0x875280).multiplyScalar(1.5), wireframe: wireframe}));
+    ground.position.set(0, -1.5, 0);
+    scene.add(ground);
+}
+
+
+// RANDOM Objects creation functions -----------------------------------------------------------------------------
 function createTorusKnot(x, z) {
     'use strict';
 
@@ -234,9 +275,9 @@ function createTorusKnot(x, z) {
     do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
 
     var torusKnot = new THREE.Object3D();
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 37, 7, p, q);
-    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe });  
-    mesh = new THREE.Mesh(geometry, material);
+    var geometry = new THREE.TorusKnotGeometry(radius, 0.25, 37, 7, p, q);
+    var material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe });  
+    var mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
     buildHitboxSphere(torusKnot, 2*radius, 0, 0, 0.3);
@@ -257,9 +298,9 @@ function createTorus(x, z) {
     const tube = radius - 0.2;
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, tube, 8, 10); 
-    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material);
+    var geometry = new THREE.TorusGeometry(radius, tube, 8, 10);
+    var material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
+    var mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
     buildHitboxSphere(torus, radius+0.5);
@@ -278,9 +319,9 @@ function createDodecahedron(x, z) {
     const radius = getRandomNumber(0.7, 1.2);
 
     var dodeca = new THREE.Object3D();
-    geometry = new THREE.DodecahedronGeometry(radius, 0);
-    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material); 
+    var geometry = new THREE.DodecahedronGeometry(radius, 0);
+    var material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
+    var mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
     buildHitboxSphere(dodeca, radius);
@@ -298,9 +339,9 @@ function createIcosahedron(x, z) {
     const radius = getRandomNumber(0.7, 1.2);
 
     var icosa = new THREE.Object3D();
-    geometry = new THREE.IcosahedronGeometry(radius, 0); 
-    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
-    mesh = new THREE.Mesh(geometry, material); 
+    var geometry = new THREE.IcosahedronGeometry(radius, 0); 
+    var material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
+    var mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
     buildHitboxSphere(icosa, radius);
@@ -311,7 +352,7 @@ function createIcosahedron(x, z) {
     randomisedObjects.push(icosa);
 }
 
-function createRandomisedBox(x, z) {
+function createBox(x, z) {
     'use strict';
 
     const height = getRandomNumber(1, 2);
@@ -356,7 +397,7 @@ function createRandomisedObjects() {
                 createIcosahedron(x_pos, z_pos);
                 break;
             case 4:
-                createRandomisedBox(x_pos, z_pos);
+                createBox(x_pos, z_pos);
                 break;
         }
     }
@@ -394,25 +435,6 @@ function distanceBetweenObjects(x1, z1, x2, z2) {
     return point1.distanceTo(point2);
 }
 
-
-function createCrate(x, y, z) { // Box without top
-    'use strict';
-    crate = new THREE.Object3D();
-    
-    // Sides
-    buildBox(crate, 2.375, 2.5, -0.125, 0.25, 5, 4.75, 0x28910E);
-    buildBox(crate, 0.125, 2.5, 2.375, 4.75, 5, 0.25, 0x28910E);
-    buildBox(crate, -2.375, 2.5, 0.125, 0.25, 5, 4.75, 0x28910E);
-    buildBox(crate, -0.125, 2.5, -2.375, 4.75, 5, 0.25, 0x28910E);
-
-
-    // Base
-   buildBox(crate, 0, 0.125, 0, 4.5, 0.25, 4.5, 0x000000);
-
-    scene.add(crate);
-    crate.position.set(x,y,z);
-}
-
 function getRandomNumber(min, max) {
     return Math.random() * (max-min) + min;
 }
@@ -421,21 +443,15 @@ function getRandomInteger(min, max) {
     return Math.floor(Math.random() * (max-min + 1) + min);
 }
 
-function createGround() {
-    var ground = new THREE.Mesh(new THREE.BoxGeometry(50, 50, 3).rotateX(-Math.PI * 0.5), new THREE.MeshBasicMaterial({color: new THREE.Color(0x875280).multiplyScalar(1.5), wireframe: wireframe}));
-    ground.position.set(0, -1.5, 0);
-    scene.add(ground);
-}
 
-// Function to create scene
+// Function to create scene ------------------------------------------------------------------------------------------
 function createScene() {
     'use strict';
     scene = new THREE.Scene();
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
-    createCrate(10, 0 ,7);  // To change (or even random)
+    createCrate(10, 0 ,7); 
     createGround();
-    
     createRandomisedObjects();
 }
 
@@ -496,51 +512,25 @@ function updateHUD(key, highlight, activeCameraN) {
         }
     }
 
-    if (wireframe && !highlight)
+    if (wireframe)
         document.getElementById(`key-${7}`).classList.add('activeWireframe');
     else document.getElementById(`key-${7}`).classList.remove('activeWireframe');
 
     // Highlight the active camera number
     const activeNumberElement = document.getElementById(`key-${activeCameraN}`);
-    if (activeNumberElement && !highlight) {
+    if (activeNumberElement) {
         activeNumberElement.classList.add('activeCamera');
     }
 
     if (keyElement) {
+
+        highlight ? keyElement.classList.add('active') : keyElement.classList.remove('active');
         
-        if (highlight) {
-            keyElement.classList.add('active');
-        } else {
-            keyElement.classList.remove('active');
-            
-        }
+        if (keyElement === activeNumberElement && highlight) 
+            activeNumberElement.classList.remove('activeCamera');
+        
     }
     
-}
-
-
-function getHitboxRadius(mesh) {
-    return mesh.geometry.parameters.radius;
-}
-
-function collided(hitbox1, hitbox2) {
-
-    const global_pos1 = new THREE.Vector3();
-    const global_pos2 = new THREE.Vector3();
-
-    hitbox1.getWorldPosition(global_pos1);
-    hitbox2.getWorldPosition(global_pos2);
-
-    const r1 = getHitboxRadius(hitbox1);
-    const r2 = getHitboxRadius(hitbox2);
-
-    const distance = global_pos1.distanceTo(global_pos2);
-    const sum_of_radii = r1+r2;
-
-    if (sum_of_radii >= distance) { 
-        return true; 
-    }
-    return false;
 }
 
 
@@ -608,9 +598,6 @@ function onKeyDown(e) {
             
             hitboxesVisible = !hitboxesVisible;
             break;
-        case 56:    // '8' key - TO REMOVE
-            activeCameraNumber = cameras[6];
-            break;
         
         // WIREFRAME activation
         case 55:    // '7' key
@@ -661,20 +648,15 @@ function onKeyDown(e) {
 }
 
 
-// Function to initialize the scene, camera, and renderer
-function init() {
+// Function to resize the window
+function onResize() {
     'use strict';
-    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-    renderer.setClearColor(0x000000, 0); // Set clear color to transparent
-    createCameras(); // Create the camera
-    createScene(); // Create the scene
-    // Highlight the active camera and wireframe initially
-    updateHUD('', true, activeCameraNumber); // Highlight the active camera
-    document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
-    document.addEventListener("keyup", onKeyUp);
-    window.addEventListener("resize", onResize);
+
+    if (window.innerHeight > 0 && window.innerWidth > 0) {
+        cameras[activeCameraNumber - 1].aspect = window.innerWidth / window.innerHeight;
+        cameras[activeCameraNumber - 1].updateProjectionMatrix();
+    }
 }
 
 
@@ -685,29 +667,37 @@ function render() {
 }
 
 
-// Function to resize the window
-function onResize() {
+// Function to initialize the scene, camera, and renderer
+function init() {
     'use strict';
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    renderer.setClearColor(0x000000, 0); // Set clear color to transparent
+    console.log("Renderer initialized:", renderer);
 
-    if (window.innerHeight > 0 && window.innerWidth) {
-        cameras[activeCameraNumber - 1].aspect = renderer.getSize().width/renderer.getSize().height;
-        cameras[activeCameraNumber - 1].updateProjectionMatrix();
-    }
+    createCameras(); // Create the camera
+    createScene(); // Create the scene
+    // Highlight the active camera and wireframe initially
+    updateHUD('', true, activeCameraNumber); // Highlight the active camera
+    document.addEventListener("keydown", onKeyDown); // Add event listener for key presses
+    document.addEventListener("keyup", onKeyUp);
+    window.addEventListener("resize", onResize);
 }
 
-// Functions to animate the scene
+
+// Functions to animate the scene --------------------------------------------------------------------------------
 function JibAnimation(deltaTime) {
-    if (rotateLeft) { //blocked != BLOCKED_LEFT) {    // Rotate left [NO LIMIT]
+    if (rotateLeft) { // Rotate left [NO LIMIT]
         topStruct.rotation.y -= ROTATION_SPEED * deltaTime;
     }
-    if (rotateRight) { //blocked != BLOCKED_RIGHT) {   // Rotate right [NO LIMIT]
+    if (rotateRight) { // Rotate right [NO LIMIT]
         topStruct.rotation.y += ROTATION_SPEED * deltaTime;
     }
 }
 
 function hookAnimation(deltaTime) {
-    if (moveDown && hook.position.y > MIN_HEIGHT && !blocked) { //blocked != BLOCKED_DOWN) { // Move down
+    if (moveDown && hook.position.y > MIN_HEIGHT && !blocked) {  // Move down
         hook.position.y -= MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
         hook.children[0].scale.y += scaleChangeFactor * deltaTime;
@@ -722,10 +712,10 @@ function hookAnimation(deltaTime) {
 }
 
 function kartAnimation(deltaTime) {
-    if (moveBackward && kart.position.z > MIN_SLIDE) { //blocked != BLOCKED_BACK) { // Move backward
+    if (moveBackward && kart.position.z > MIN_SLIDE) { // Move backward
         kart.position.z -= MOVEMENT_SPEED * deltaTime;
     }
-    if (moveForward && kart.position.z < MAX_SLIDE) { //blocked != BLOCKED_FRONT) {  // Move forward
+    if (moveForward && kart.position.z < MAX_SLIDE) { // Move forward
         kart.position.z += MOVEMENT_SPEED * deltaTime;
     }
 }
@@ -747,7 +737,7 @@ function clawsAnimation(deltaTime) {
 }
 
 
-//Release object animation
+//Release object animation -----------------------------------------------------------------------------------------
 function moveObjectClaws(deltaTime) {
     if (-claws.children[0].rotation.x < MAX_CLAW_OPENING) { // Open claws
         claws.children[0].rotation.x -= CLAW_SPEED * deltaTime;
@@ -760,7 +750,7 @@ function moveObjectClaws(deltaTime) {
 }
 
 function moveObjectHook(deltaTime){
-    if(hook.position.y < -10) {
+    if(hook.position.y < -10) { // Move up
         hook.position.y += MOVEMENT_SPEED * deltaTime;
         const scaleChangeFactor = MOVEMENT_SPEED / 14;
         hook.children[0].scale.y -= scaleChangeFactor * deltaTime;
@@ -834,10 +824,8 @@ function moveObject(deltaTime) {
         var jibCond = moveObjectJib(deltaTime);
 
         if(kartCond && jibCond) {
-            whynot = true;
             if(moveObjectClaws(deltaTime)){
                 objectCaught = false;
-                whynot = false;
             }    
         }
     }
@@ -852,7 +840,9 @@ function moveObject(deltaTime) {
         hook.getWorldPosition(worldPosition);
 
         caughtObject.position.copy(worldPosition);
-        caughtObject.position.y -= 1 + caughtObject.children[1].geometry.parameters.radius + 0.5; // hook_box_height/2 + object_hb_radius + hook_top_hb_radius  
+
+        // hook_box_height/2 + object_hb_radius + hook_top_hb_radius  
+        caughtObject.position.y -= 1 + caughtObject.children[1].geometry.parameters.radius + 0.5; 
 
         scene.add(caughtObject);
         caughtObject.setRotationFromQuaternion(worldRotation);
@@ -864,18 +854,63 @@ function moveObject(deltaTime) {
     if (release) releaseObject(deltaTime);
 }
 
-//Collisions
+//Collision functions -------------------------------------------------------------------------------------------------
+function getHitboxRadius(mesh) {
+    return mesh.geometry.parameters.radius;
+}
+
+function collided(hitbox1, hitbox2) {
+
+    const global_pos1 = new THREE.Vector3();
+    const global_pos2 = new THREE.Vector3();
+
+    hitbox1.getWorldPosition(global_pos1);
+    hitbox2.getWorldPosition(global_pos2);
+
+    const r1 = getHitboxRadius(hitbox1);
+    const r2 = getHitboxRadius(hitbox2);
+
+    const distance = global_pos1.distanceTo(global_pos2);
+    const sum_of_radii = r1+r2;
+
+    if (sum_of_radii >= distance) {
+        return true; 
+    }
+    return false;
+}
+
+
 function collisions(){
     var boolHook, boolClaw;
     const len = randomisedObjects.length;
+    var hookClaws = hook.children[3];
+    // Claws hitboxes
+    var frontClaw = hookClaws.children[0].children[2];
+    var backClaw = hookClaws.children[1].children[2];
+    var rightClaw = hookClaws.children[3].children[2];
+    var leftClaw = hookClaws.children[3].children[2];
 
-    for (var i=0; i < len; i++) {
+    if (objectCaught){
+        boolHook = collided(hook.children[2], caughtObject.children[1]);
+        boolClaw = collided(frontClaw, caughtObject.children[1]) &&
+                   collided(backClaw, caughtObject.children[1]) &&
+                   collided(rightClaw, caughtObject.children[1]) &&
+                   collided(leftClaw, caughtObject.children[1]);
+
+        // The object is ready to drop, if the claws aren't still touching it          
+        if (!boolClaw && boolHook) { 
+            readyForRelease = true;
+        }     
+    } else for (var i=0; i < len; i++) {
         var object = randomisedObjects[i];
-        var hookClaw = hook.children[3].children[0].children[2];
 
         boolHook = collided(hook.children[2], object.children[1]);
-        boolClaw = collided(hookClaw, object.children[1]);
+        boolClaw = collided(frontClaw, object.children[1]) &&
+                   collided(backClaw, object.children[1]) &&
+                   collided(rightClaw, object.children[1]) &&
+                   collided(leftClaw, object.children[1]);
 
+        // Block downwards movement 
         if ((boolClaw && !boolHook) || (!boolClaw && boolHook)) {
             blocked = true;
             break;
@@ -883,7 +918,8 @@ function collisions(){
         else if (!boolClaw && !boolHook) {
             blocked = false;
         }
-        else if (!readyForRelease && !objectCaught) {
+        // Object has been caught
+        else {
             caughtObject = object;
 
             var vec = new THREE.Vector3();
@@ -895,14 +931,8 @@ function collisions(){
             break;
         } 
     }
-
-    if (whynot){
-        boolHook = collided(hook.children[2], caughtObject.children[1]);
-        boolClaw = collided(hookClaw, caughtObject.children[1]);
-        if (!boolClaw && boolHook) 
-            readyForRelease = true;
-    }
 }
+
 
 function animate() {
     'use strict';
@@ -913,15 +943,13 @@ function animate() {
     if (objectCaught) {
         moveObject(deltaTime);
         blocked = false;
-        collisions(deltaTime);
     } else {
-    clawsAnimation(deltaTime);
-    hookAnimation(deltaTime);
-    kartAnimation(deltaTime);
-    JibAnimation(deltaTime);
-    collisions(deltaTime);
+        clawsAnimation(deltaTime);
+        hookAnimation(deltaTime);
+        kartAnimation(deltaTime);
+        JibAnimation(deltaTime);
     }
-
+    collisions();
 
     render();
 }

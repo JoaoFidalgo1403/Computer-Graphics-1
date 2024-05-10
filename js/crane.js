@@ -846,16 +846,17 @@ function releaseObject(deltaTime) {
 }
 
 function moveObject(deltaTime) {
-    var hookCond = moveObjectHook(deltaTime);
-    var kartCond = moveObjectKart(deltaTime);
-    var jibCond = moveObjectJib(deltaTime);
+    if (moveObjectHook(deltaTime)) {
+        var kartCond = moveObjectKart(deltaTime);
+        var jibCond = moveObjectJib(deltaTime);
 
-    if (hookCond && kartCond && jibCond) {
-        whynot = true;
-        if(moveObjectClaws(deltaTime)){
-            objectCaught = false;
-            whynot = false;
-        }    
+        if(kartCond && jibCond) {
+            whynot = true;
+            if(moveObjectClaws(deltaTime)){
+                objectCaught = false;
+                whynot = false;
+            }    
+        }
     }
 
     if (readyForRelease) {

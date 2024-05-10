@@ -21,7 +21,7 @@ var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
 var objectCaught = false, caughtObject;
 var blocked = false;
@@ -34,13 +34,6 @@ const FORTH = 1;
 const BACK = 2;
 const RIGHT = 3;
 const LEFT = 4;
-
-const BLOCKED_FRONT = 1;
-const BLOCKED_BACK = 2;
-const BLOCKED_LEFT = 4;
-const BLOCKED_RIGHT = 3;
-const BLOCKED_DOWN = 5;
-
 
 const ROTATION_SPEED = 0.35;
 const MOVEMENT_SPEED = 5;
@@ -248,9 +241,7 @@ function createTorusKnot(x, z) { // minimum = 9
     torusKnot.add(mesh);
     buildHitboxSphere(torusKnot, 2*radius, 0, 0, 0.3);
     torusKnot.height = 0.5;
-    torusKnot.position.x = x;
-    torusKnot.position.y = torusKnot.height;
-    torusKnot.position.z = z;
+    torusKnot.position.set(x, torusKnot.height, z);
 
     torusKnot.rotation.x = Math.PI/2;
 
@@ -265,16 +256,14 @@ function createTorus(x, z) {
     const radius = getRandomNumber(0.3, 0.7);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 40); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 8, 20); 
     material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
     buildHitboxSphere(torus, radius+0.5);
     torus.height = 0.5; 
-    torus.position.x = x;
-    torus.position.y = torus.height;
-    torus.position.z = z;
+    torus.position.set(x, torus.height, z);
 
     torus.rotation.x = Math.PI/2;
 
@@ -295,9 +284,7 @@ function createDodecahedron(x, z) {
     dodeca.add(mesh);
     buildHitboxSphere(dodeca, radius);
     dodeca.height = radius-0.125; 
-    dodeca.position.x = x;
-    dodeca.position.y = dodeca.height;                               // Just a safety measure to keep objects from floating
-    dodeca.position.z = z;
+    dodeca.position.set(x, dodeca.height, z);
 
 
     scene.add(dodeca);
@@ -317,9 +304,7 @@ function createIcosahedron(x, z) {
     icosa.add(mesh);
     buildHitboxSphere(icosa, radius);
     icosa.height = radius-0.125;
-    icosa.position.x = x;
-    icosa.position.y = icosa.height;                                // Just a safety measure to keep objects from floating
-    icosa.position.z = z;
+    icosa.position.set(x, icosa.height, z);
 
     scene.add(icosa);
     randomisedObjects.push(icosa);
@@ -337,7 +322,7 @@ function createRandomisedBox(x, z) {
     buildHitboxSphere(box, Math.max(height, side)/2);
 
     box.height = height/2;
-    box.position.set(x, height/2, z);
+    box.position.set(x, box.height, z);
 
     scene.add(box);
     randomisedObjects.push(box);
@@ -543,20 +528,14 @@ function collided(hitbox1, hitbox2) {
 
     hitbox1.getWorldPosition(global_pos1);
     hitbox2.getWorldPosition(global_pos2);
-    const x1 = global_pos1.x;
-    const y1 = global_pos1.y;
-    const z1 = global_pos1.z;
-    const r1 = getHitboxRadius(hitbox1);
 
-    const x2 = global_pos2.x;
-    const y2 = global_pos2.y;
-    const z2 = global_pos2.z;
+    const r1 = getHitboxRadius(hitbox1);
     const r2 = getHitboxRadius(hitbox2);
 
-    const distance_squared = Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2) + Math.pow(z1-z2, 2);
-    const radii_squared = Math.pow(r1+r2, 2);
+    const distance = global_pos1.distanceTo(global_pos2);
+    const sum_of_radii = r1+r2;
 
-    if (radii_squared >= distance_squared) { 
+    if (sum_of_radii >= distance) { 
         return true; 
     }
     return false;
@@ -883,8 +862,8 @@ function moveObject(deltaTime) {
     if (release) releaseObject(deltaTime);
 }
 
-//Colisions
-function colisions(){
+//Collisions
+function collisions(){
     var boolHook, boolClaw;
     const len = randomisedObjects.length;
 
@@ -932,13 +911,13 @@ function animate() {
     if (objectCaught) {
         moveObject(deltaTime);
         blocked = false;
-        colisions(deltaTime);
+        collisions(deltaTime);
     } else {
     clawsAnimation(deltaTime);
     hookAnimation(deltaTime);
     kartAnimation(deltaTime);
     JibAnimation(deltaTime);
-    colisions(deltaTime);
+    collisions(deltaTime);
     }
 
 

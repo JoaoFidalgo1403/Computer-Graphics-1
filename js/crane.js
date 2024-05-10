@@ -47,9 +47,6 @@ const MOVEMENT_SPEED = 5;
 const CLAW_SPEED = 0.6;
 var fallingSpeed = MOVEMENT_SPEED;
 
-//const MAX_ROTATION = Math.PI / 2;
-//const MIN_ROTATION = -Math.PI / 2;
-
 const MAX_CLAW_OPENING =  Math.PI / 3;
 const MIN_CLAW_OPENING =  - Math.PI / 12;
 
@@ -92,7 +89,7 @@ function buildHitboxSphere(obj, radius, x, y, z) {
     z = (typeof z !== 'undefined') ? z : 0;
 
     geometry = new THREE.SphereGeometry(radius, 10, 10);
-    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x05f51d, wireframe: wireframe, visible: hitboxesVisible }));
+    mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xFF0000, wireframe: wireframe, visible: hitboxesVisible }));
     mesh.position.set(x, y, z);
     obj.add(mesh);
 }
@@ -105,25 +102,25 @@ function createClaw(x, y, z, orientation){
     switch(orientation){
         case FORTH:
             buildBox(claw, 0, -0.5, 0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, 0.7, 0.5, 0.75, 0.25, 0xFF00FF);
+            buildBox(claw, 0, -1.3, 0.7, 0.5, 0.75, 0.25, 0x00FFFF);
             claw.children[0].rotation.x = - Math.PI / 4;
             claw.children[1].rotation.x = Math.PI / 12;
             break;
         case BACK:
             buildBox(claw, 0, -0.5, -0.5, 0.5, 1.25, 0.25, 0x000000);  
-            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0xFF00FF);
+            buildBox(claw, 0, -1.3, -0.7, 0.5, 0.75, 0.25, 0x00FFFF);
             claw.children[0].rotation.x = Math.PI / 4;
             claw.children[1].rotation.x = - Math.PI / 12;
             break;
         case RIGHT:
             buildBox(claw, 0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
-            buildBox(claw, 0.7, -1.3, 0, 0.25, 0.75, 0.5, 0xFF00FF);
+            buildBox(claw, 0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x00FFFF);
             claw.children[0].rotation.z = Math.PI / 4;
             claw.children[1].rotation.z = - Math.PI / 12;
             break;
         case LEFT:
             buildBox(claw, -0.5, -0.5, 0, 0.25, 1.25, 0.5, 0x000000);  
-            buildBox(claw, -0.7, -1.3, 0, 0.25, 0.75, 0.5, 0xFF00FF);
+            buildBox(claw, -0.7, -1.3, 0, 0.25, 0.75, 0.5, 0x00FFFF);
             claw.children[0].rotation.z = - Math.PI / 4;
             claw.children[1].rotation.z =  Math.PI / 12;
             break;
@@ -244,8 +241,8 @@ function createTorusKnot(x, z) { // minimum = 9
     do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
 
     var torusKnot = new THREE.Object3D();
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 90, 13, p, q);
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe });  
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 40, 13, p, q);
+    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe });  
     mesh = new THREE.Mesh(geometry, material);
 
     torusKnot.add(mesh);
@@ -268,8 +265,8 @@ function createTorus(x, z) {
     const radius = getRandomNumber(0.3, 0.7);
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 90); 
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    geometry = new THREE.TorusGeometry(radius, 0.5, 16, 40); 
+    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
     torus.add(mesh);
@@ -292,7 +289,7 @@ function createDodecahedron(x, z) {
 
     var dodeca = new THREE.Object3D();
     geometry = new THREE.DodecahedronGeometry(radius, 0);
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
     dodeca.add(mesh);
@@ -314,7 +311,7 @@ function createIcosahedron(x, z) {
 
     var icosa = new THREE.Object3D();
     geometry = new THREE.IcosahedronGeometry(radius, 0); 
-    material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: wireframe }); 
+    material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material); 
 
     icosa.add(mesh);
@@ -335,7 +332,7 @@ function createRandomisedBox(x, z) {
     const side = getRandomNumber(1, 2);
 
     var box = new THREE.Object3D();
-    buildBox(box, 0, 0, 0, side, height, side, 0xff0000);
+    buildBox(box, 0, 0, 0, side, height, side, 0x0000FF);
 
     buildHitboxSphere(box, Math.max(height, side)/2);
 
@@ -436,6 +433,12 @@ function getRandomInteger(min, max) {
     return Math.floor(Math.random() * (max-min + 1) + min);
 }
 
+function createGround() {
+    var ground = new THREE.Mesh(new THREE.BoxGeometry(50, 50, 3).rotateX(-Math.PI * 0.5), new THREE.MeshBasicMaterial({color: new THREE.Color(0x875280).multiplyScalar(1.5), wireframe: wireframe}));
+    ground.position.set(0, -1.5, 0);
+    scene.add(ground);
+}
+
 // Function to create scene
 function createScene() {
     'use strict';
@@ -443,6 +446,8 @@ function createScene() {
     scene.add(new THREE.AxesHelper(10));
     createCrane(0, 0, 0);
     createCrate(10, 0 ,7);  // To change (or even random)
+    createGround();
+    
     createRandomisedObjects();
 }
 
@@ -455,7 +460,7 @@ function createCameras() {
     var top = window.innerHeight / 28; 
     var bottom = window.innerHeight / -28; 
     var near = 1; 
-    var far = 1000; 
+    var far = 2000; 
 
     camera1= new THREE.OrthographicCamera(left, right, top, bottom, near, far);
     camera1.position.set(0, 10, 100); 
@@ -469,7 +474,7 @@ function createCameras() {
     camera3.position.set(0, 100, 0); 
     camera3.lookAt(0, 0, 0);
 
-    camera4 = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+    camera4 = new THREE.OrthographicCamera(left-10, right+10, top+10, bottom-10, near, far);
     camera4.position.set(30, 30, 30);
     camera4.lookAt(0, 0, 0);
 
@@ -495,21 +500,6 @@ function createCameras() {
 function updateHUD(key, highlight, activeCameraN) {
     'use strict';
     var keyElement = document.getElementById(`key-${key}`);
-    if (keyElement) {
-        
-        if (highlight) {
-            if (key < 7 && key > 0) keyElement.classList.add('activeCamera'); // Add highlight class
-            else if (key == 7) keyElement.classList.add('activeWireframe');
-            else keyElement.classList.add('active');
-        
-        } else {
-            if (key < 7 && key > 0) keyElement.classList.remove('activeCamera'); // Add highlight class
-            else if (key == 7) keyElement.classList.remove('activeWireframe');
-            else keyElement.classList.remove('active');
-            
-        }
-    }
-
     // Reset all numbers to not active
     for (let i = 1; i <= 6; i++) {
         const numberElement = document.getElementById(`key-${i}`);
@@ -518,14 +508,25 @@ function updateHUD(key, highlight, activeCameraN) {
         }
     }
 
-    if (wireframe)
+    if (wireframe && !highlight)
         document.getElementById(`key-${7}`).classList.add('activeWireframe');
     else document.getElementById(`key-${7}`).classList.remove('activeWireframe');
 
     // Highlight the active camera number
     const activeNumberElement = document.getElementById(`key-${activeCameraN}`);
-    if (activeNumberElement) {
+    if (activeNumberElement && !highlight) {
         activeNumberElement.classList.add('activeCamera');
+    }
+
+    if (keyElement) {
+        
+        if (highlight) {
+            keyElement.classList.add('active');
+        
+        } else {
+            keyElement.classList.remove('active');
+            
+        }
     }
     
 }
@@ -685,6 +686,7 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
+    renderer.setClearColor(0x000000, 0); // Set clear color to transparent
     createCameras(); // Create the camera
     createScene(); // Create the scene
     // Highlight the active camera and wireframe initially
@@ -698,7 +700,6 @@ function init() {
 // Function to render the scene
 function render() {
     'use strict';
-    renderer.setClearColor(0xFFFFFF);   // Background color set to Light yellow
     renderer.render(scene, cameras[activeCameraNumber - 1]);
 }
 
@@ -839,6 +840,7 @@ function releaseObject(deltaTime) {
         else caughtObject.position.y -= fallingSpeed * deltaTime;
         fallingSpeed *= 1.1;
     } else {
+        scene.remove(caughtObject);
         release = false;
         fallingSpeed = MOVEMENT_SPEED;
     }
@@ -942,7 +944,6 @@ function animate() {
 
     render();
 }
-
 
 // Initialize the scene
 init();

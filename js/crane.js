@@ -16,12 +16,12 @@ var activeCameraNumber, camera1, camera2, camera3, camera4, camera5, camera6, te
 var geometry, material, mesh;
 var moveForward = false, moveBackward = false, rotateLeft = false, rotateRight = false, moveUp = false, moveDown = false;
 var crate;
-var wireframe = true;
+var wireframe = false;
 var openClaws = false;
 var closeClaws = false;
 
 var kart, topStruct, hook, claws, randomisedObjects = [];
-var hitboxesVisible = true;     // Variable to toggle on and off the visibility of the hitboxes
+var hitboxesVisible = false;     // Variable to toggle on and off the visibility of the hitboxes
 var activeCameraNumber;
 var objectCaught = false, caughtObject;
 var blocked = false;
@@ -225,7 +225,7 @@ function createCrane(x, y, z) {
 }
 
 // RANDOM Objects
-function createTorusKnot(x, z) { // minimum = 9
+function createTorusKnot(x, z) {
     'use strict';
 
     const radius = getRandomNumber(0.5, 0.8);
@@ -234,7 +234,7 @@ function createTorusKnot(x, z) { // minimum = 9
     do{ q = getRandomInteger(3, 6); } while (p == q);   // To prevent Torus Knots from looking like a Torus
 
     var torusKnot = new THREE.Object3D();
-    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 40, 13, p, q);
+    geometry = new THREE.TorusKnotGeometry(radius, 0.25, 37, 7, p, q);
     material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe });  
     mesh = new THREE.Mesh(geometry, material);
 
@@ -254,9 +254,10 @@ function createTorus(x, z) {
     'use strict';
 
     const radius = getRandomNumber(0.3, 0.7);
+    const tube = radius - 0.2;
 
     var torus = new THREE.Object3D();
-    geometry = new THREE.TorusGeometry(radius, 0.5, 8, 20); 
+    geometry = new THREE.TorusGeometry(radius, tube, 8, 10); 
     material = new THREE.MeshBasicMaterial({ color: 0x0000FF, wireframe: wireframe }); 
     mesh = new THREE.Mesh(geometry, material);
 
@@ -388,7 +389,9 @@ function possiblePosition(positions, x, z) {
 }
 
 function distanceBetweenObjects(x1, z1, x2, z2) {
-    return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(z1-z2, 2));
+    const point1 = new THREE.Vector3(x1, 0, z1);
+    const point2 = new THREE.Vector3(x2, 0, z2); 
+    return point1.distanceTo(point2);
 }
 
 
@@ -507,7 +510,6 @@ function updateHUD(key, highlight, activeCameraN) {
         
         if (highlight) {
             keyElement.classList.add('active');
-        
         } else {
             keyElement.classList.remove('active');
             

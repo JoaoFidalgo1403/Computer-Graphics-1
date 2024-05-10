@@ -3,11 +3,7 @@
  *  - João Fidalgo, ist1103471
  *  - Tomás Cruz, ist1103425
  *  - Rodrigo Friães, ist1104139
- * 
- * NOTES (to delete later):
- * 
- * *Write here anything*
- * 
+ * Work time estimate per collaborator: 20h
  */
 
 import * as THREE from 'three';
@@ -650,13 +646,33 @@ function onKeyDown(e) {
 
 // Function to resize the window
 function onResize() {
-    'use strict';
+    // Update renderer size
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    if (window.innerHeight > 0 && window.innerWidth > 0) {
-        cameras[activeCameraNumber - 1].aspect = window.innerWidth / window.innerHeight;
-        cameras[activeCameraNumber - 1].updateProjectionMatrix();
-    }
+    // Update camera aspect ratio
+    const aspect = window.innerWidth / window.innerHeight;
+    var camera = cameras[activeCameraNumber - 1];
+
+    // For orthographic cameras
+    if (camera instanceof THREE.OrthographicCamera) {
+        // Calculate the new dimensions of the orthographic camera
+        const frustumHeight = camera.top - camera.bottom;
+        const frustumWidth = frustumHeight * aspect;
+
+        // Set new camera dimensions
+        camera.left = -frustumWidth / 2;
+        camera.right = frustumWidth / 2;
+        camera.top = frustumHeight / 2;
+        camera.bottom = -frustumHeight / 2;
+    } 
+    // For perspective cameras
+    else if (camera instanceof THREE.PerspectiveCamera) {
+        // Update camera aspect ratio
+        camera.aspect = aspect;
+}
+
+    // Update camera projection matrix
+    camera.updateProjectionMatrix();
 }
 
 
